@@ -1,19 +1,19 @@
+import os
+import time
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
-import os
+import sounddevice as sd
 from scipy.stats import probplot
 from scipy.signal import resample
-import sounddevice as sd
-import time
 
 
 PLOT_DIR = os.sep.join([os.path.dirname(__file__), 'plots'])
 
 
-def assign1(data_file: str, headless: bool = True):
+def assign1(data_file: str, headless: bool = False):
     """
     This function will complete all questions, generating plots to the 'plots'
     subdirectory, outputting question information to the screen as well as a
@@ -46,6 +46,12 @@ def assign1(data_file: str, headless: bool = True):
         plt.show()
 
 
+def set_minor_gridlines(ax):
+    ax.get_xaxis().set_minor_locator(mpl.ticker.AutoMinorLocator())
+    ax.get_yaxis().set_minor_locator(mpl.ticker.AutoMinorLocator())
+    ax.grid(b=True, which='minor', linewidth=0.5, linestyle=':')
+
+
 def question_1(data_file: str,
                ylim: tuple = None,
                xlim: tuple = None) -> pd.DataFrame:
@@ -76,9 +82,7 @@ def question_1(data_file: str,
 
     lineplot = sns.lineplot(x='time', y='voltage', data=timeseries_data)
     lineplot.set(xlabel=xlabel, ylabel=ylabel, title=title)
-    lineplot.get_xaxis().set_minor_locator(mpl.ticker.AutoMinorLocator())
-    lineplot.get_yaxis().set_minor_locator(mpl.ticker.AutoMinorLocator())
-    lineplot.grid(b=True, which='minor', linewidth=0.5, linestyle=':')
+    set_minor_gridlines(lineplot)
     if ylim is not None:
         plt.ylim(ylim)
     if xlim is not None:
@@ -114,12 +118,14 @@ def question_4(timeseries_data, standard_deviation):
 
 def question_5(timeseries_data: pd.DataFrame, headless=True):
     plt.figure()
-    sns.histplot(data=timeseries_data['zero mean voltage'], stat='density', binwidth=0.1)
+    histogram_plot = sns.histplot(data=timeseries_data['zero mean voltage'], stat='density', binwidth=0.1)
+    set_minor_gridlines(histogram_plot)
 
 
 def question_6(timeseries_data: pd.DataFrame):
     fig, ax = plt.subplots()
-    res = probplot(timeseries_data['zero mean voltage'], plot=ax)
+    result = probplot(timeseries_data['zero mean voltage'], plot=ax)
+    set_minor_gridlines(ax)
 
 
 def question_7(timeseries_data: pd.DataFrame):
