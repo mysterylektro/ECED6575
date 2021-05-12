@@ -5,12 +5,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from scipy.stats import probplot
+from scipy.signal import resample
+import sounddevice as sd
+import time
 
 
 PLOT_DIR = os.sep.join([os.path.dirname(__file__), 'plots'])
 
 
-def assign1(data_file: str, headless: bool = False):
+def assign1(data_file: str, headless: bool = True):
     """
     This function will complete all questions, generating plots to the 'plots'
     subdirectory, outputting question information to the screen as well as a
@@ -37,6 +40,7 @@ def assign1(data_file: str, headless: bool = False):
     max_amplitude, stddev_ratio = question_4(timeseries_data, standard_deviation)
     question_5(timeseries_data)
     question_6(timeseries_data)
+    question_7(timeseries_data)
 
     if not headless:
         plt.show()
@@ -116,3 +120,13 @@ def question_5(timeseries_data: pd.DataFrame, headless=True):
 def question_6(timeseries_data: pd.DataFrame):
     fig, ax = plt.subplots()
     res = probplot(timeseries_data['zero mean voltage'], plot=ax)
+
+
+def question_7(timeseries_data: pd.DataFrame):
+    sample_rate = 44100
+    duration = timeseries_data['time'].iloc[-1] - timeseries_data['time'].iloc[0]
+    normalized_sound = resample(timeseries_data['zero mean voltage'], int(np.floor(duration * sample_rate)))
+    normalized_sound /= np.max(normalized_sound)
+    sd.play(normalized_sound, sample_rate)
+    time.sleep(duration)
+    sd.stop()
