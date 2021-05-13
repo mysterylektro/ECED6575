@@ -132,8 +132,8 @@ def assign1(data_file: str, headless: bool = True):
     stddev_ratio = max_amplitude / standard_deviation
 
     # Append values to the zero-mean plot textbox.
-    text_string += ('\n' + '\n'.join([r'$V_{max}=%.2f$' % max_amplitude,
-                                      r'$\frac{V_{max}}{\sigma}=%.2f$' %stddev_ratio]))
+    text_string += ('\n' + '\n'.join([r'$V_{max}=%.2f\ V$' % max_amplitude,
+                                      r'$\frac{V_{max}}{\sigma}=%.2f$' % stddev_ratio]))
     text_obj.set_text(text_string)
 
     # Change title of plot to reflect question number
