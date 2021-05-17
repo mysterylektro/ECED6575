@@ -165,7 +165,7 @@ def assign1(data_file: str, headless: bool = True, log_level: int = None):
     # Log computed values to file
     logger.log(logging.INFO, '\n'.join([f"Zero-mean {data_name}",
                                         f"Standard deviation (V): {standard_deviation}",
-                                        f"Variance (V): {variance}"]) + '\n')
+                                        f"Variance (V^2): {variance}"]) + '\n')
 
     # Generate timeseries plot.
     logger.log(logging.DEBUG, f'Generating timeseries plot...')
@@ -180,7 +180,7 @@ def assign1(data_file: str, headless: bool = True, log_level: int = None):
 
     # Add text to plot.
     text_string = '\n'.join([r'$\sigma=%.2f\ V$' % standard_deviation,
-                             r'$\sigma^2=%.2f\ V$' % variance])
+                             r'$\sigma^2=%.2f\ V^2$' % variance])
     text_obj = zm_timeseries_plot.text(0.05, 0.95, text_string,
                                        transform=timeseries_plot.transAxes,
                                        fontsize=14, verticalalignment='top', bbox=TEXTBOX_PROPS)
@@ -224,7 +224,7 @@ def assign1(data_file: str, headless: bool = True, log_level: int = None):
     """
     Problem 5
     """
-    logger.log(logging.DEBUG, f'Staring problem 5...')
+    logger.log(logging.DEBUG, f'Starting problem 5...')
 
     # Common axis labels
     x_label = 'zero-mean voltage(V)'
