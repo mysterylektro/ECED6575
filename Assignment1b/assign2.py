@@ -11,164 +11,95 @@
 """
 
 import os
-import numpy as np
-from scipy.fft import ifft
-from typing import Union
-import seaborn as sns
-from Assignment1a.assign1 import plot_timeseries
+from signal_analysis_tools.spectrogram import *
+# from Assignment1a.assign1 import set_minor_gridlines, plot_histogram, normal_probability_plot, setup_logging
 
 # Setup output directories.
 PLOT_DIR = os.sep.join([os.path.dirname(__file__), 'plots'])
 if not os.path.exists(PLOT_DIR):
     os.makedirs(PLOT_DIR)
 
-# Setup plotting styles.
-sns.plotting_context("paper")
-sns.set_style("darkgrid")
+# Setup common graphics properties.
+TEXTBOX_PROPS = {'boxstyle': 'round', 'facecolor': 'white', 'alpha': 0.75}
 
 
-def pink(n):
-    """
+def generate_plots(phase=(random_phase, 'Random Phase'),
+                   magnitude=(1, 'Flat Magnitude'),
+                   problem=1):
+    timeseries_title = f'Real Timeseries\n{phase[1]}, {magnitude[1]}'
+    spectrum_title = f'Spectrum\n{phase[1]}, {magnitude[1]}'
 
-    Args:
-        n:
+    data_16 = generate_spectrum(n=16, phase=phase[0], magnitude=magnitude[0])
+    data = generate_spectrum(phase=phase[0], magnitude=magnitude[0])
 
-    Returns:
+    phase_filename = phase[1].lower().replace(" ", "_")
+    magnitude_filename = magnitude[1].lower().replace(" ", "_")
 
-    """
-    return 1. / np.sqrt(np.arange(n) + 1)
+    # Create spectrum plot for N = 16
 
+    fig = plt.figure()
+    spectrum_data = data_16[['frequency', 'real_spectrum', 'imaginary_spectrum']].melt('frequency', var_name='Spectrum', value_name='vals')
+    spectrum_plot = sns.lineplot(data=spectrum_data,
+                                 x='frequency',
+                                 y='vals',
+                                 hue='Spectrum')
+    spectrum_plot.set(xlabel='frequency bin', ylabel='amplitude', title=spectrum_title)
+    for t, l in zip(spectrum_plot.get_legend().texts, ['Real', 'Imaginary']):
+        t.set_text(l)
+    spectrum_plot.get_legend().get_frame().update(TEXTBOX_PROPS)
 
-def random_phase(n: int):
-    """
+    fig.savefig(f'{PLOT_DIR}{os.sep}problem_{problem}_spectrum_n16_{phase_filename}_{magnitude_filename}.png')
+    plt.close(fig)
 
-    Args:
-        n:
+    # Create timeseries plot
+    fig = plt.figure()
+    timeseries_plot = sns.lineplot(data=data,
+                                   x='time',
+                                   y='real_timeseries')
+    timeseries_plot.set(xlabel='time (s)', ylabel='amplitude (V)', title=timeseries_title)
+    set_minor_gridlines(timeseries_plot)
+    mean, var, stddev = np.mean(data['real_timeseries']), np.var(data['real_timeseries']), np.std(data['real_timeseries'])
+    stddev_ratio = np.max(data['real_timeseries']) / stddev
 
-    Returns:
+    text_string = '\n'.join([r'$\mu=%.2f\ V$' % mean,
+                             r'$\sigma=%.2f\ V$' % stddev,
+                             r'$\sigma^2=%.2f\ V^2$' % var,
+                             r'$\frac{V_{max}}{\sigma}=%.2f$' % stddev_ratio])
 
-    """
-    return np.random.uniform(0, 2 * np.pi, (n,))
+    timeseries_plot.text(0.05, 0.95, text_string,
+                         transform=timeseries_plot.transAxes,
+                         fontsize=14, verticalalignment='top', bbox=TEXTBOX_PROPS)
 
+    fig.savefig(f'{PLOT_DIR}{os.sep}problem_{problem}_timeseries_{phase_filename}_{magnitude_filename}.png')
+    plt.close(fig)
 
-def generate_spectrum(n: int = 65536,
-                      magnitude: Union[float, callable] = 1.0,
-                      phase: Union[float, callable] = random_phase,
-                      fs: float = 0.0,
-                      dc_offset: float = 0.0,
-                      spectral_density=True):
-    if fs == 0.0:
-        f_res = 1.0
-    else:
-        f_res = fs / n
+    fig, histogram_plot = plot_histogram(data['real_timeseries'],
+                                         x_label='amplitude (V)',
+                                         y_label='probability density function',
+                                         title=timeseries_title,
+                                         bin_model='scott')
 
-    # Calculate positive frequency magnitude
-    if type(magnitude) is float or type(magnitude) is int:
-        a = np.full(n // 2 - 1, fill_value=magnitude)
-    elif callable(magnitude):
-        try:
-            a = magnitude(n // 2 - 1)
-        except ValueError:
-            raise ValueError("magnitude function must accept only one input argument: the number of elements.")
-    else:
-        raise ValueError("Magnitude must be either a float or a callable function")
+    fig.savefig(f'{PLOT_DIR}{os.sep}problem_{problem}_histogram_{phase_filename}_{magnitude_filename}.png')
+    plt.close(fig)
 
-    if type(phase) is float or type(phase) is int:
-        theta = np.full(n // 2 - 1, fill_value=phase)
-    elif callable(phase):
-        try:
-            theta = phase(n // 2 - 1)
-        except ValueError:
-            raise ValueError("phase function must accept only one input argument: the number of elements.")
-    else:
-        raise ValueError("phase must be either a float or a callable function")
+    fig, prob_plot, stats = normal_probability_plot(data['real_timeseries'], stddev=stddev)
+    prob_plot.set(title=timeseries_title, xlabel='amplitude (V)')
+    fig.savefig(f'{PLOT_DIR}{os.sep}problem_{problem}_normal_probability_{phase_filename}_{magnitude_filename}.png')
+    plt.close(fig)
 
-    # Calculate positive frequency magnitude
-    offset = np.array([dc_offset + 0j])
-    nyquist_freq = np.array([0 + 0j])
-
-    if spectral_density:
-        a /= f_res
-        offset /= f_res
-
-    pos_freq = a * np.exp(1j * theta)
-    neg_freq = np.flip(np.conj(pos_freq))
-
-    # Create a complex value for the frequency domain.
-    spectrum = np.concatenate([offset, pos_freq, nyquist_freq, neg_freq])
-
-    # Construct the timeseries from the inverse fourier transform
-    timeseries = ifft(spectrum * n * f_res)
-
-    return timeseries, spectrum
+    return data
 
 
 def assign2():
-    """
-    Problem 1
-    """
 
-    random_phase_unit_magnitude = generate_spectrum()
+    logger = setup_logging(assignment_name='1b')
 
-    fig, random_phase_unit_magnitude_timeseries = plot_timeseries(x=np.arange(len(random_phase_unit_magnitude[0])),
-                                                                  y=random_phase_unit_magnitude[0].real,
-                                                                  x_label='time',
-                                                                  y_label='amplitude',
-                                                                  title='Timeseries\nRandom Phase, Magnitude = 1')
+    # Set random seed for reproducibility
+    np.random.seed(100)
 
-    fig.savefig(f'{PLOT_DIR}{os.sep}timeseries_random_phase_mag_1.png')
-
-    fig, random_phase_unit_magnitude_spectrum = plot_timeseries(x=np.arange(len(random_phase_unit_magnitude[1])),
-                                                                y=np.abs(random_phase_unit_magnitude[1]),
-                                                                x_label='frequency',
-                                                                y_label='amplitude',
-                                                                title='Spectrum\nRandom Phase, Magnitude = 1')
-
-    fig.savefig(f'{PLOT_DIR}{os.sep}spectrum_random_phase_mag_1.png')
-
-    """
-    Phase = 0
-    """
-
-    zero_phase_unit_magnitude = generate_spectrum(phase=0)
-
-    fig, zero_phase_unit_magnitude_timeseries = plot_timeseries(x=np.arange(len(zero_phase_unit_magnitude[0])),
-                                                                y=zero_phase_unit_magnitude[0].real,
-                                                                x_label='time',
-                                                                y_label='amplitude',
-                                                                title='Timeseries\nZero Phase, Magnitude = 1')
-
-    fig.savefig(f'{PLOT_DIR}{os.sep}timeseries_zero_phase_mag_1.png')
-
-    fig, zero_phase_unit_magnitude_spectrum = plot_timeseries(x=np.arange(len(zero_phase_unit_magnitude[1])),
-                                                              y=np.abs(zero_phase_unit_magnitude[1]),
-                                                              x_label='frequency',
-                                                              y_label='amplitude',
-                                                              title='Spectrum\nZero Phase, Magnitude = 1')
-
-    fig.savefig(f'{PLOT_DIR}{os.sep}spectrum_zero_phase_mag_1.png')
-
-    """
-    Magnitude = pink
-    """
-
-    random_phase_pink_magnitude = generate_spectrum(magnitude=pink)
-
-    fig, random_phase_pink_magnitude_timeseries = plot_timeseries(x=np.arange(len(random_phase_pink_magnitude[0])),
-                                                                  y=random_phase_pink_magnitude[0].real,
-                                                                  x_label='time',
-                                                                  y_label='amplitude',
-                                                                  title='Timeseries\nRandom Phase, Magnitude = Pink')
-
-    fig.savefig(f'{PLOT_DIR}{os.sep}timeseries_random_phase_mag_pink.png')
-
-    fig, random_phase_pink_magnitude_spectrum = plot_timeseries(x=np.arange(len(random_phase_pink_magnitude[1])),
-                                                                y=np.abs(random_phase_pink_magnitude[1].real),
-                                                                x_label='frequency',
-                                                                y_label='amplitude',
-                                                                title='Spectrum\nRandom Phase, Magnitude = Pink')
-
-    fig.savefig(f'{PLOT_DIR}{os.sep}spectrum_random_phase_mag_pink.png')
+    prob1_data = generate_plots(phase=(random_phase, 'Random Phase'), magnitude=(1, 'Flat Magnitude'), problem=1)
+    prob2_data = generate_plots(phase=(0, 'Zero Phase'), magnitude=(1, 'Flat Magnitude'), problem=2)
+    prob3_data = generate_plots(phase=(random_phase, 'Random Phase'), magnitude=(pink, 'Pink Noise'), problem=3)
 
 
 if __name__ == '__main__':
