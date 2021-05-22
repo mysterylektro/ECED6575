@@ -37,8 +37,8 @@ class Timeseries:
     def time(self):
         return self.data['time']
 
-    def amplitude(self):
-        if any(np.iscomplex(self.data['amplitude'])):
+    def amplitude(self, only_real=True):
+        if only_real and np.iscomplexobj(self.data['amplitude']):
             return self.data['amplitude'].real
         else:
             return self.data['amplitude']
@@ -102,6 +102,9 @@ class TimeseriesAnalyzer:
                            'var': self.timeseries.var,
                            'max': self.timeseries.max,
                            'std_ratio': self.timeseries.stddev_ratio}
+
+    def set_timeseries(self, timeseries: Timeseries):
+        self.timeseries = timeseries
 
     def plot_time_domain(self,
                          x_label='',

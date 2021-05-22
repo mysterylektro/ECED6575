@@ -37,14 +37,15 @@ def assign1(data_file: str, log_level: int = None):
 
     Args:
         data_file: string indicating the name of the originating data file.
-        headless: Boolean value to inhibit displaying plots. Plots will still be
-                  saved to the the global PLOT_DIR directory.
         log_level: integer value indicating the logger output log level.
 
     Returns: None
     """
 
     logger = setup_logging()
+
+    # Set random seed for reproducibility
+    np.random.seed(100)
 
     if log_level is not None:
         logger.setLevel(log_level)
@@ -117,16 +118,16 @@ def assign1(data_file: str, log_level: int = None):
                                         f"Standard deviation (V): {zero_mean_timeseries.std()}",
                                         f"Variance (V^2): {zero_mean_timeseries.var()}"]) + '\n')
 
-    zero_mean_timeseries_analyzer = TimeseriesAnalyzer(zero_mean_timeseries)
+    timeseries_analyzer.set_timeseries(zero_mean_timeseries)
 
-    fig, p = zero_mean_timeseries_analyzer.plot_time_domain(title=f'Assignment 1, Problem 3\nZero-mean '
-                                                                     f'timeseries of {data_name}',
-                                                            x_label='time (s)',
-                                                            y_label='voltage (V)',
-                                                            y_lim=(-3, 3),
-                                                            x_lim=(0, 0.5),
-                                                            filename=f'{PLOT_DIR}{os.sep}problem_3_{data_name}.png',
-                                                            stats=['std', 'var'])
+    fig, p = timeseries_analyzer.plot_time_domain(title=f'Assignment 1, Problem 3\nZero-mean '
+                                                        f'timeseries of {data_name}',
+                                                  x_label='time (s)',
+                                                  y_label='voltage (V)',
+                                                  y_lim=(-3, 3),
+                                                  x_lim=(0, 0.5),
+                                                  filename=f'{PLOT_DIR}{os.sep}problem_3_{data_name}.png',
+                                                  stats=['std', 'var'])
     plt.close(fig)
     logger.log(logging.DEBUG, f'Problem 3 complete!')
 
@@ -141,16 +142,17 @@ def assign1(data_file: str, log_level: int = None):
     # Log computed values to file
     logger.log(logging.INFO, '\n'.join([f"Zero-mean {data_name}",
                                         f"Maximum amplitude (V): {zero_mean_timeseries.max()}",
-                                        f"Max amplitude : Standard deviation ratio: {zero_mean_timeseries.stddev_ratio()}"]) + '\n')
+                                        f"Max amplitude : Standard deviation ratio: "
+                                        f"{zero_mean_timeseries.stddev_ratio()}"]) + '\n')
 
-    fig, p = zero_mean_timeseries_analyzer.plot_time_domain(title=f'Assignment 1, Problem 4\nZero-mean '
-                                                                     f'timeseries of {data_name}',
-                                                            x_label='time (s)',
-                                                            y_label='voltage (V)',
-                                                            y_lim=(-3, 3),
-                                                            x_lim=(0, 0.5),
-                                                            filename=f'{PLOT_DIR}{os.sep}problem_4_{data_name}.png',
-                                                            stats=['std', 'var', 'max', 'std_ratio'])
+    fig, p = timeseries_analyzer.plot_time_domain(title=f'Assignment 1, Problem 4\nZero-mean '
+                                                        f'timeseries of {data_name}',
+                                                  x_label='time (s)',
+                                                  y_label='voltage (V)',
+                                                  y_lim=(-3, 3),
+                                                  x_lim=(0, 0.5),
+                                                  filename=f'{PLOT_DIR}{os.sep}problem_4_{data_name}.png',
+                                                  stats=['std', 'var', 'max', 'std_ratio'])
     plt.close(fig)
     logger.log(logging.DEBUG, f'Problem 4 complete!')
 
@@ -164,17 +166,18 @@ def assign1(data_file: str, log_level: int = None):
 
     # Generate histogram for various bin width models:
     logger.log(logging.DEBUG, f'Generating histogram plots...')
-    for bin_model in zero_mean_timeseries_analyzer.BIN_MODELS:
-        bin_title = zero_mean_timeseries_analyzer.BIN_MODELS[bin_model]
+    for bin_model in timeseries_analyzer.BIN_MODELS:
+        bin_title = timeseries_analyzer.BIN_MODELS[bin_model]
         logger.log(logging.DEBUG, f'Generating {bin_title} histogram plot...')
 
         # Create a unique title based on the data file name and the bin model
         title = f'Assignment 1, Problem 5\nSample distribution of zero-mean {data_name} data\n{bin_title}'
-        fig, p = zero_mean_timeseries_analyzer.plot_histogram(bin_model=bin_model,
-                                                              x_label=x_label,
-                                                              y_label='probability density function',
-                                                              title=title,
-                                                              filename=f'{HIST_PLOT_DIR}{os.sep}problem_5_{data_name}_{bin_model}.png')
+        fig, p = timeseries_analyzer.plot_histogram(bin_model=bin_model,
+                                                    x_label=x_label,
+                                                    y_label='probability density function',
+                                                    title=title,
+                                                    filename=f'{HIST_PLOT_DIR}{os.sep}problem_5_'
+                                                             f'{data_name}_{bin_model}.png')
         plt.close(fig)
     logger.log(logging.DEBUG, f'Histogram plots complete!')
     logger.log(logging.DEBUG, f'Problem 5 complete!')
@@ -186,14 +189,16 @@ def assign1(data_file: str, log_level: int = None):
 
     # Generate normal probability plot
     logger.log(logging.DEBUG, f'Generating normal probability plot...')
-    fig, ax, (slope, intercept, r) = zero_mean_timeseries_analyzer.plot_normal_probability(x_label='zero-mean sample values (V)',
-                                                                                           title=f'Assignment 1, Problem 6\nNormal probability plot for {data_name}',
-                                                                                           filename=f'{PLOT_DIR}{os.sep}problem_6_probplot_{data_name}.png')
+    timeseries_analyzer.plot_normal_probability(x_label='zero-mean sample values (V)',
+                                                title=f'Assignment 1, Problem 6\nNormal probability '
+                                                      f'plot for {data_name}',
+                                                filename=f'{PLOT_DIR}{os.sep}problem_6_probplot_'
+                                                         f'{data_name}.png')
 
     """
     Problem 7
     """
     logger.log(logging.DEBUG, f'Starting problem 7...')
 
-    zero_mean_timeseries_analyzer.playback_timeseries(sample_rate=44100)
+    timeseries_analyzer.playback_timeseries(sample_rate=44100)
     logger.log(logging.DEBUG, f'Problem 7 complete!')

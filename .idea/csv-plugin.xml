@@ -31,6 +31,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\signal_analysis_tools\spectrogram.py">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\signal_analysis_tools\timeseries.py">
           <value>
             <Attribute>

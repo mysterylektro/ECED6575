@@ -13,6 +13,7 @@
 from signal_analysis_tools.timeseries import *
 from scipy import fft
 from typing import Union
+import pandas as pd
 
 
 class Spectrum:
@@ -22,8 +23,17 @@ class Spectrum:
         self.bin_size = bin_size
         self.name = name
 
+    def frequency(self):
+        return self.data['frequency']
+
+    def amplitude(self):
+        return self.data['amplitude']
+
+    def magnitude(self):
+        return np.abs(self.data['amplitude'])
+
     def num_samples(self):
-        return len(self.data['frequencies'])
+        return len(self.data['frequency'])
 
     def nyquist(self):
         return self.data['amplitude'][self.num_samples() // 2]
@@ -39,7 +49,7 @@ class Spectrum:
 
     def to_timeseries(self):
         amplitude = fft.ifft(self.data['amplitude'] * self.num_samples() * self.bin_size)
-        sample_rate = 1 / self.bin_size
+        sample_rate = len(amplitude) / self.bin_size
         time_axis = np.arange(self.num_samples()) / sample_rate
         return Timeseries(time_axis, amplitude, sample_rate)
 
@@ -116,3 +126,49 @@ class SpectrumAnalyzer:
     # Setup plotting styles.
     sns.plotting_context("paper")
     sns.set_style("darkgrid")
+
+    def __init__(self, spectrum: Spectrum):
+        self.spectrum = spectrum
+
+    def set_spectrum(self, spectrum: Spectrum):
+        self.spectrum = spectrum
+
+    def plot_spectrum(self,
+                      x_label='',
+                      y_label='',
+                      title='',
+                      y_lim=None,
+                      x_lim=None,
+                      filename=None):
+
+        frequency = self.spectrum.frequency()
+        frequency -= (np.max(frequency) - self.spectrum.bin_size) / 2
+
+        amplitude = self.spectrum.amplitude()
+        amplitude = np.roll(amplitude, len(amplitude) // 2 - 1)
+
+        df = pd.DataFrame({'frequency': frequency,
+                           'real': amplitude.real,
+                           'imaginary': amplitude.imag})
+        df = df.melt('frequency', var_name='spectrum', value_name='values')
+
+        fig = plt.figure()
+        spectrum_plot = sns.lineplot(data=df,
+                                     x='frequency',
+                                     y='values',
+                                     hue='spectrum')
+        spectrum_plot.set(xlabel=x_label, ylabel=y_label, title=title)
+        set_minor_gridlines(spectrum_plot)
+
+        spectrum_plot.get_legend().get_frame().update(self.TEXTBOX_PROPS)
+
+        if y_lim is not None:
+            plt.ylim(y_lim)
+
+        if x_lim is not None:
+            plt.xlim(x_lim)
+
+        if filename:
+            fig.savefig(filename)
+
+        return fig, spectrum_plot
