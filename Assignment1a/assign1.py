@@ -29,7 +29,7 @@ if not os.path.exists(HIST_PLOT_DIR):
     os.makedirs(HIST_PLOT_DIR)
 
 
-def assign1(data_file: str, log_level: int = None):
+def assign1a(data_file: str, log_level: int = None):
     """
     This function will complete all problems, generating plots to the 'plots/'
     subdirectory, outputting diagnostic information to the screen as well as
@@ -62,17 +62,17 @@ def assign1(data_file: str, log_level: int = None):
     sample_rate = 1. / (data['time'].iloc[1] - data['time'].iloc[0])
     timeseries = Timeseries(data['time'], data['voltage'], sample_rate)
 
-    # Create a timeseries analyzer object
-    timeseries_analyzer = TimeseriesAnalyzer(timeseries)
+    # Create a timeseries plotter object
+    timeseries_plotter = TimeseriesPlotter(timeseries)
 
     # Generate a figure and plot of the timeseries data.
     logger.log(logging.DEBUG, f"Plotting timeseries data...")
-    fig, p = timeseries_analyzer.plot_time_domain(title=f'Assignment 1, Problem 1\nTimeseries of {data_name}',
-                                                  x_label='time (s)',
-                                                  y_label='voltage (V)',
-                                                  y_lim=(-3, 3),
-                                                  x_lim=(0, 0.5),
-                                                  filename=f'{PLOT_DIR}{os.sep}problem_1_{data_name}.png')
+    fig, p = timeseries_plotter.plot_time_domain(title=f'Assignment 1a, Problem 1\nTimeseries of {data_name}',
+                                                 x_label='time (s)',
+                                                 y_label='voltage (V)',
+                                                 y_lim=(-3, 3),
+                                                 x_lim=(0, 0.5),
+                                                 filename=f'{PLOT_DIR}{os.sep}problem_1_{data_name}.png')
     plt.close(fig)
 
     logger.log(logging.DEBUG, f"Problem 1 complete!")
@@ -91,13 +91,13 @@ def assign1(data_file: str, log_level: int = None):
                                         f"Sample rate (Hz): {timeseries.sample_rate}",
                                         f"Mean voltage (V): {timeseries.mean()}"]) + '\n')
 
-    fig, p = timeseries_analyzer.plot_time_domain(title=f'Assignment 1, Problem 2\nTimeseries of {data_name}',
-                                                  x_label='time (s)',
-                                                  y_label='voltage (V)',
-                                                  y_lim=(-3, 3),
-                                                  x_lim=(0, 0.5),
-                                                  filename=f'{PLOT_DIR}{os.sep}problem_2_{data_name}.png',
-                                                  stats=['num_samples', 'sample_rate', 'mean'])
+    fig, p = timeseries_plotter.plot_time_domain(title=f'Assignment 1a, Problem 2\nTimeseries of {data_name}',
+                                                 x_label='time (s)',
+                                                 y_label='voltage (V)',
+                                                 y_lim=(-3, 3),
+                                                 x_lim=(0, 0.5),
+                                                 filename=f'{PLOT_DIR}{os.sep}problem_2_{data_name}.png',
+                                                 stats=['num_samples', 'sample_rate', 'mean'])
 
     plt.close(fig)
     logger.log(logging.DEBUG, f"Problem 2 complete!")
@@ -118,16 +118,16 @@ def assign1(data_file: str, log_level: int = None):
                                         f"Standard deviation (V): {zero_mean_timeseries.std()}",
                                         f"Variance (V^2): {zero_mean_timeseries.var()}"]) + '\n')
 
-    timeseries_analyzer.set_timeseries(zero_mean_timeseries)
+    timeseries_plotter.set_timeseries(zero_mean_timeseries)
 
-    fig, p = timeseries_analyzer.plot_time_domain(title=f'Assignment 1, Problem 3\nZero-mean '
-                                                        f'timeseries of {data_name}',
-                                                  x_label='time (s)',
-                                                  y_label='voltage (V)',
-                                                  y_lim=(-3, 3),
-                                                  x_lim=(0, 0.5),
-                                                  filename=f'{PLOT_DIR}{os.sep}problem_3_{data_name}.png',
-                                                  stats=['std', 'var'])
+    fig, p = timeseries_plotter.plot_time_domain(title=f'Assignment 1a, Problem 3\nZero-mean '
+                                                       f'timeseries of {data_name}',
+                                                 x_label='time (s)',
+                                                 y_label='voltage (V)',
+                                                 y_lim=(-3, 3),
+                                                 x_lim=(0, 0.5),
+                                                 filename=f'{PLOT_DIR}{os.sep}problem_3_{data_name}.png',
+                                                 stats=['std', 'var'])
     plt.close(fig)
     logger.log(logging.DEBUG, f'Problem 3 complete!')
 
@@ -145,14 +145,14 @@ def assign1(data_file: str, log_level: int = None):
                                         f"Max amplitude : Standard deviation ratio: "
                                         f"{zero_mean_timeseries.stddev_ratio()}"]) + '\n')
 
-    fig, p = timeseries_analyzer.plot_time_domain(title=f'Assignment 1, Problem 4\nZero-mean '
-                                                        f'timeseries of {data_name}',
-                                                  x_label='time (s)',
-                                                  y_label='voltage (V)',
-                                                  y_lim=(-3, 3),
-                                                  x_lim=(0, 0.5),
-                                                  filename=f'{PLOT_DIR}{os.sep}problem_4_{data_name}.png',
-                                                  stats=['std', 'var', 'max', 'std_ratio'])
+    fig, p = timeseries_plotter.plot_time_domain(title=f'Assignment 1a, Problem 4\nZero-mean '
+                                                       f'timeseries of {data_name}',
+                                                 x_label='time (s)',
+                                                 y_label='voltage (V)',
+                                                 y_lim=(-3, 3),
+                                                 x_lim=(0, 0.5),
+                                                 filename=f'{PLOT_DIR}{os.sep}problem_4_{data_name}.png',
+                                                 stats=['std', 'var', 'max', 'std_ratio'])
     plt.close(fig)
     logger.log(logging.DEBUG, f'Problem 4 complete!')
 
@@ -166,18 +166,18 @@ def assign1(data_file: str, log_level: int = None):
 
     # Generate histogram for various bin width models:
     logger.log(logging.DEBUG, f'Generating histogram plots...')
-    for bin_model in timeseries_analyzer.BIN_MODELS:
-        bin_title = timeseries_analyzer.BIN_MODELS[bin_model]
+    for bin_model in timeseries_plotter.BIN_MODELS:
+        bin_title = timeseries_plotter.BIN_MODELS[bin_model]
         logger.log(logging.DEBUG, f'Generating {bin_title} histogram plot...')
 
         # Create a unique title based on the data file name and the bin model
         title = f'Assignment 1, Problem 5\nSample distribution of zero-mean {data_name} data\n{bin_title}'
-        fig, p = timeseries_analyzer.plot_histogram(bin_model=bin_model,
-                                                    x_label=x_label,
-                                                    y_label='probability density function',
-                                                    title=title,
-                                                    filename=f'{HIST_PLOT_DIR}{os.sep}problem_5_'
-                                                             f'{data_name}_{bin_model}.png')
+        fig, p = timeseries_plotter.plot_histogram(bin_model=bin_model,
+                                                   x_label=x_label,
+                                                   y_label='probability density function',
+                                                   title=title,
+                                                   filename=f'{HIST_PLOT_DIR}{os.sep}problem_5_'
+                                                            f'{data_name}_{bin_model}.png')
         plt.close(fig)
     logger.log(logging.DEBUG, f'Histogram plots complete!')
     logger.log(logging.DEBUG, f'Problem 5 complete!')
@@ -189,16 +189,15 @@ def assign1(data_file: str, log_level: int = None):
 
     # Generate normal probability plot
     logger.log(logging.DEBUG, f'Generating normal probability plot...')
-    timeseries_analyzer.plot_normal_probability(x_label='zero-mean sample values (V)',
-                                                title=f'Assignment 1, Problem 6\nNormal probability '
-                                                      f'plot for {data_name}',
-                                                filename=f'{PLOT_DIR}{os.sep}problem_6_probplot_'
-                                                         f'{data_name}.png')
+    timeseries_plotter.plot_normal_probability(x_label='zero-mean sample values (V)',
+                                               title=f'Assignment 1a, Problem 6\nNormal probability '
+                                                     f'plot for {data_name}',
+                                               filename=f'{PLOT_DIR}{os.sep}problem_6_probplot_'
+                                                        f'{data_name}.png')
 
     """
     Problem 7
     """
     logger.log(logging.DEBUG, f'Starting problem 7...')
-
-    timeseries_analyzer.playback_timeseries(sample_rate=44100)
+    playback_timeseries(zero_mean_timeseries, sample_rate=44100)
     logger.log(logging.DEBUG, f'Problem 7 complete!')

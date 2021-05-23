@@ -28,6 +28,10 @@ class Timeseries:
         self.sample_rate = sample_rate
         self.name = name
 
+    def set_sample_rate(self, sample_rate: float):
+        self.sample_rate = sample_rate
+        self.data['time'] = np.arange(self.num_samples()) / self.sample_rate
+
     def duration(self):
         return (self.num_samples() - 1) / self.sample_rate
 
@@ -68,7 +72,7 @@ class Timeseries:
         return self.sample_rate
 
 
-class TimeseriesAnalyzer:
+class TimeseriesPlotter:
     # Setup common graphics properties.
     TEXTBOX_PROPS = {'boxstyle': 'round', 'facecolor': 'white', 'alpha': 0.75}
 
@@ -179,8 +183,8 @@ class TimeseriesAnalyzer:
         ax.plot(quantiles * slope + intercept, quantiles, 'r')
 
         percentiles = np.array([0.01, 0.02, 0.05, 0.10, 0.25, 0.5, 0.75, 0.90, 0.95, 0.98, 0.99])
-        ticks_quan = [norm.ppf(p) for p in percentiles]
-        plt.yticks(ticks_quan, percentiles)
+        ticks_quantile = [norm.ppf(p) for p in percentiles]
+        plt.yticks(ticks_quantile, percentiles)
 
         plt.ylabel(y_label)
         plt.xlabel(x_label)
@@ -204,17 +208,43 @@ class TimeseriesAnalyzer:
 
         return fig, ax, (slope, intercept, r)
 
-    def playback_timeseries(self, sample_rate=None):
-        duration = self.timeseries.duration()
-        if sample_rate:
-            data = resample(self.timeseries.amplitude(), int(np.floor(duration * sample_rate)))
-        else:
-            sample_rate = self.timeseries.sample_rate
-            data = self.timeseries.amplitude()
 
-        normalized_data = data / np.max(data)
+def playback_timeseries(timeseries: Timeseries, sample_rate=None):
+    duration = timeseries.duration()
+    if sample_rate:
+        data = resample(timeseries.amplitude(), int(np.floor(duration * sample_rate)))
+    else:
+        sample_rate = timeseries.sample_rate
+        data = timeseries.amplitude()
 
-        # Play sound in speakers.
-        sd.play(normalized_data, sample_rate)
-        time.sleep(duration)
-        sd.stop()
+    normalized_data = data / np.max(data)
+
+    # Play sound in speakers.
+    sd.play(normalized_data, sample_rate)
+    time.sleep(duration)
+    sd.stop()
+
+
+def play_and_record_timeseries(timeseries: Timeseries, sample_rate=None):
+
+    if sample_rate:
+        data = resample(timeseries.amplitude(), int(np.floor(timeseries.duration() * sample_rate)))
+    else:
+        sample_rate = timeseries.sample_rate
+        data = timeseries.amplitude()
+
+    normalized_data = (data / np.max(data)).astype(np.float32)
+
+    device_out = 5  # Speakers
+    device_in = 1  # Headset microphone
+    with sd.Stream(device=(device_in, device_out), channels=1,
+                   samplerate=sample_rate, blocksize=len(normalized_data)) as stream:
+        stream.write(normalized_data)
+        recorded_data = stream.read(stream.read_available)
+
+    t = np.arange(len(recorded_data[0])) / sample_rate
+    return Timeseries(t, recorded_data[0], sample_rate)
+
+
+def record_timeseries(duration=1.0, prompt=True, sample_rate=None):
+    pass

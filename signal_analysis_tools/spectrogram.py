@@ -26,6 +26,12 @@ class Spectrum:
     def frequency(self):
         return self.data['frequency']
 
+    def sample_rate(self):
+        return self.num_samples() * self.bin_size
+
+    def duration(self):
+        return self.num_samples() / self.sample_rate()
+
     def amplitude(self):
         return self.data['amplitude']
 
@@ -42,22 +48,26 @@ class Spectrum:
         return self.data['amplitude'][0]
 
     def positive_content(self):
-        return self.data['amplitude'][1:self.num_samples() // 2]
+        return self.data['amplitude'][0:self.num_samples() // 2 + 1]
 
     def negative_content(self):
         return self.data['amplitude'][self.num_samples() // 2 + 1:]
 
     def to_timeseries(self):
         amplitude = fft.ifft(self.data['amplitude'] * self.num_samples() * self.bin_size)
-        sample_rate = len(amplitude) / self.bin_size
+        sample_rate = self.sample_rate()
         time_axis = np.arange(self.num_samples()) / sample_rate
         return Timeseries(time_axis, amplitude, sample_rate)
 
-    def single_sided_power_spectrum(self, duration):
-        return 2. / duration * np.conj(self.positive_content()) * self.positive_content()
+    def single_sided_power_spectrum(self):
+        duration = self.duration()
+        weights = np.full(len(self.positive_content()), fill_value=2/duration)
+        weights[0] = 1/duration
+        weights[1] = 1/duration
+        return weights * np.conj(self.positive_content()) * self.positive_content()
 
-    def double_sided_power_spectrum(self, duration):
-        return 1. / duration * np.conj(self.data['amplitude']) * self.data['amplitude']
+    def double_sided_power_spectrum(self):
+        return (1. / self.duration()) * np.conj(self.data['amplitude']) * self.data['amplitude']
 
 
 def pink(n):

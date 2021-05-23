@@ -15,9 +15,9 @@
     calls function(s):  assign1(data_file)
 """
 
-from assign1 import assign1
+from assign1 import assign1a
 
 data_files = ['TRAC1_noise_time', 'TRAC3_sin100_time', 'TRAC11_burstnoise_time', 'TRAC11_burstnoise_time_clean']
 
 for data_file in data_files:
-    assign1(data_file + '.csv')
+    assign1a(data_file + '.csv')
