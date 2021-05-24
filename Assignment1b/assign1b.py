@@ -23,24 +23,23 @@ if not os.path.exists(PLOT_DIR):
 def problem_1(spectrum16: Spectrum,
               spectrum65536: Spectrum,
               prob=1):
-
     timeseries_plotter = TimeseriesPlotter()
     spectrum_plotter = SpectrumPlotter()
 
     spectrum_plotter.set_spectrum(spectrum16)
     fig, plot = spectrum_plotter.plot_spectrum(x_label='frequency (Hz)',
-                                                y_label='amplitude (V)',
-                                                title=f'Assignment 1b, Problem {prob}\nReal and '
-                                                      f'Imaginary spectrum, n=16',
-                                                filename=f'{PLOT_DIR}{os.sep}problem_{prob}_spectrum_n16.png')
+                                               y_label='amplitude (V)',
+                                               title=f'Assignment 1b, Problem {prob}\nReal and '
+                                                     f'Imaginary spectrum, n=16',
+                                               filename=f'{PLOT_DIR}{os.sep}problem_{prob}_spectrum_n16.png')
     plt.close(fig)
 
     spectrum_plotter.set_spectrum(spectrum65536)
     fig, plot = spectrum_plotter.plot_spectrum(x_label='frequency (Hz)',
-                                                y_label='amplitude (V)',
-                                                title=f'Assignment 1b, Problem {prob}\nReal and '
-                                                      f'Imaginary spectrum, n=65536',
-                                                filename=f'{PLOT_DIR}{os.sep}problem_{prob}_spectrum_n65536.png')
+                                               y_label='amplitude (V)',
+                                               title=f'Assignment 1b, Problem {prob}\nReal and '
+                                                     f'Imaginary spectrum, n=65536',
+                                               filename=f'{PLOT_DIR}{os.sep}problem_{prob}_spectrum_n65536.png')
     plt.close(fig)
 
     timeseries = spectrum_to_timeseries(spectrum65536)
@@ -49,35 +48,35 @@ def problem_1(spectrum16: Spectrum,
 
     timeseries_plotter.set_timeseries(timeseries)
     fig, plot = timeseries_plotter.plot_time_domain(x_label='time (s)',
-                                                     y_label='amplitude (V)',
-                                                     title=f'Assignment 1b, Problem {prob}\nReal '
-                                                           f'timeseries, n=65536',
-                                                     filename=f'{PLOT_DIR}{os.sep}problem_{prob}_'
-                                                              f'timeseries_n65536.png',
-                                                     stats=['mean', 'var', 'std', 'std_ratio'])
+                                                    y_label='amplitude (V)',
+                                                    title=f'Assignment 1b, Problem {prob}\nReal '
+                                                          f'timeseries, n=65536',
+                                                    filename=f'{PLOT_DIR}{os.sep}problem_{prob}_'
+                                                             f'timeseries_n65536.png',
+                                                    stats=['mean', 'var', 'std', 'std_ratio'])
     plt.close(fig)
 
     fig, plot = timeseries_plotter.plot_histogram(x_label='amplitude (V)',
-                                                   y_label='probability density function',
-                                                   title=f'Assignment 1b, Problem {prob}\nTimeseries histogram, '
-                                                         f'n=65536',
-                                                   filename=f'{PLOT_DIR}{os.sep}problem_{prob}_timeseries_histogram'
-                                                            f'_n65536.png')
+                                                  y_label='probability density function',
+                                                  title=f'Assignment 1b, Problem {prob}\nTimeseries histogram, '
+                                                        f'n=65536',
+                                                  filename=f'{PLOT_DIR}{os.sep}problem_{prob}_timeseries_histogram'
+                                                           f'_n65536.png')
 
     plt.close(fig)
 
     fig, plot, stats = timeseries_plotter.plot_normal_probability(x_label='amplitude (V)',
-                                                                   title=f'Assignment 1b, Problem {prob}\n'
-                                                                         f'Timeseries normal probability plot,'
-                                                                         f' n=65536',
-                                                                   filename=f'{PLOT_DIR}{os.sep}problem_{prob}'
-                                                                            f'_timeseries_normal_prob_plot_'
-                                                                            f'n65536.png')
+                                                                  title=f'Assignment 1b, Problem {prob}\n'
+                                                                        f'Timeseries normal probability plot,'
+                                                                        f' n=65536',
+                                                                  filename=f'{PLOT_DIR}{os.sep}problem_{prob}'
+                                                                           f'_timeseries_normal_prob_plot_'
+                                                                           f'n65536.png')
     plt.close(fig)
 
 
 def assign1b():
-
+    # Setup logging
     logger = setup_logging(assignment_name='1b')
 
     # Set random seed for reproducibility
@@ -92,7 +91,6 @@ def assign1b():
     random_phase_spectrum16 = generate_spectrum(n=16)
     random_phase_spectrum65536 = generate_spectrum(n=65536)
     problem_1(random_phase_spectrum16, random_phase_spectrum65536, prob=1)
-
 
     """
     Problem 2
@@ -135,8 +133,8 @@ def assign1b():
 
     fig, plot = spectrum_plotter.plot_magnitude(x_label='frequency (Hz)',
                                                 y_label='linear magnitude (α V)',
-                                                x_lim = [0, 20000],
-                                                y_lim = [0, 10],
+                                                x_lim=[0, 20000],
+                                                y_lim=[0, 10],
                                                 positive_only=True,
                                                 title='Assignment 1b, Problem 5\n'
                                                       'Spectrum of recorded white noise playback',
@@ -157,7 +155,7 @@ def assign1b():
                                             filename=f'{PLOT_DIR}{os.sep}problem_5_double_white_noise_playback.png')
     plt.close(fig)
 
-    timeseries_subset = recorded_timeseries.subset(0.8, 0.8 + timeseries.duration()/2, zero_mean=True)
+    timeseries_subset = recorded_timeseries.subset(0.8, 0.8 + timeseries.duration() / 2, zero_mean=True)
     ts_plotter.set_timeseries(timeseries_subset)
     fig, plot = ts_plotter.plot_time_domain(x_label='time (s)',
                                             y_label='amplitude (α V)',
@@ -198,7 +196,7 @@ def assign1b():
 
     plt.close(fig)
 
-    mean_square_value = ts.rms()**2
+    mean_square_value = ts.rms() ** 2
     double_sided_integral = np.sum(spectrum.double_sided_power_spectral_density() * spectrum.bin_size)
     single_sided_integral = np.sum(spectrum.single_sided_power_spectral_density() * spectrum.bin_size)
 
@@ -225,7 +223,7 @@ def assign1b():
 
     plt.close(fig)
 
-    mean_square_value = ts.rms()**2
+    mean_square_value = ts.rms() ** 2
     double_sided_integral = np.sum(spectrum.double_sided_power_spectral_density() * spectrum.bin_size)
     single_sided_integral = np.sum(spectrum.single_sided_power_spectral_density() * spectrum.bin_size)
 
@@ -253,6 +251,8 @@ def assign1b():
                                                                                 f'of recorded signal',
                                                                           filename=f'{PLOT_DIR}{os.sep}problem_8_gxx_'
                                                                                    f'recorded_signal.png')
+    plt.semilogy()
+    fig.savefig('{PLOT_DIR}{os.sep}problem_8_gxx_recorded_signal_semilogy.png')
     plt.close(fig)
 
 
