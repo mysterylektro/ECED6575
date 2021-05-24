@@ -151,7 +151,7 @@ class SpectrumPlotter:
     sns.plotting_context("paper")
     sns.set_style("darkgrid")
 
-    def __init__(self, spectrum: Spectrum= None):
+    def __init__(self, spectrum: Spectrum = None):
         self.spectrum = spectrum
 
     def set_spectrum(self, spectrum: Spectrum):

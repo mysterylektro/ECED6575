@@ -18,6 +18,9 @@ from scipy.stats import probplot, norm
 from scipy.signal import resample
 from signal_analysis_tools.utilities import set_minor_gridlines
 
+SPEAKERS = 5  # Speakers identified using sd.query_devices()
+HEADSET_MICROPHONE = 1  # Headset microphone identified using sd.query_devices()
+
 
 class Timeseries:
 
@@ -233,7 +236,7 @@ class TimeseriesPlotter:
 
 
 def timeseries_from_csv(filename, *args, **kwargs):
-    data = np.genfromtxt(filename, usecols=[0, 1], names=['time', 'amplitude'], delimiter=',')
+    data = np.genfromtxt(filename, usecols=[0, 1], names=['time', 'amplitude'], delimiter=',', *args, **kwargs)
     sample_rate = 1 / np.mean(data['time'][1:] - data['time'][0:-1])
     return Timeseries(data['time'], data['amplitude'], sample_rate)
 
@@ -264,9 +267,7 @@ def play_and_record_timeseries(timeseries: Timeseries, sample_rate=None):
 
     normalized_data = (data / np.max(data)).astype(np.float32)
 
-    device_out = 5  # Speakers
-    device_in = 1  # Headset microphone
-    with sd.Stream(device=(device_in, device_out), channels=1,
+    with sd.Stream(device=(HEADSET_MICROPHONE, SPEAKERS), channels=1,
                    samplerate=sample_rate, blocksize=len(normalized_data)) as stream:
         stream.write(normalized_data)
         recorded_data = stream.read(stream.read_available)
@@ -278,8 +279,9 @@ def play_and_record_timeseries(timeseries: Timeseries, sample_rate=None):
 def record_timeseries(duration=1.0, prompt=True, sample_rate=None):
     if prompt:
         input(f"Press enter when ready to record for {duration} seconds at {sample_rate} samples per second...")
-    device_in = 1
-    with sd.InputStream(device=device_in, channels=1, samplerate=sample_rate, blocksize=int(duration * sample_rate)) as stream:
+
+    with sd.InputStream(device=HEADSET_MICROPHONE, channels=1,
+                        samplerate=sample_rate, blocksize=int(duration * sample_rate)) as stream:
         sd.sleep(int(duration * 1000))
         recorded_data = stream.read(stream.read_available)
     time_axis = np.arange(0, len(recorded_data[0])) / sample_rate
