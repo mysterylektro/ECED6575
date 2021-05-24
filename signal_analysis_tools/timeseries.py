@@ -10,7 +10,6 @@
     
 """
 
-import time
 import numpy as np
 import seaborn as sns
 import sounddevice as sd
@@ -22,7 +21,12 @@ from signal_analysis_tools.utilities import set_minor_gridlines
 
 class Timeseries:
 
-    def __init__(self, time_axis: np.array, amplitude: np.array, sample_rate: float, name: str = ''):
+    def __init__(self,
+                 time_axis: np.array,
+                 amplitude: np.array,
+                 sample_rate: float,
+                 name: str = ''):
+
         self.data = np.array([*zip(time_axis, amplitude)], dtype=[('time', time_axis.dtype),
                                                                   ('amplitude', amplitude.dtype)])
         self.sample_rate = sample_rate
@@ -33,7 +37,7 @@ class Timeseries:
         self.data['time'] = np.arange(self.num_samples()) / self.sample_rate
 
     def duration(self):
-        return (self.num_samples() - 1) / self.sample_rate
+        return self.num_samples() / self.sample_rate
 
     def num_samples(self):
         return len(self.data['time'])
@@ -46,6 +50,9 @@ class Timeseries:
             return self.data['amplitude'].real
         else:
             return self.data['amplitude']
+
+    def mean_square(self):
+        return np.mean(self.amplitude() ** 2)
 
     def rms(self):
         return np.sqrt(np.mean(self.amplitude() ** 2))
@@ -70,6 +77,14 @@ class Timeseries:
 
     def get_sample_rate(self):
         return self.sample_rate
+
+    def subset(self, start_time, end_time, zero_mean=False):
+        start_idx, end_idx = np.searchsorted(self.data['time'], (start_time, end_time), side="left")
+        data = self.data['amplitude'][start_idx:end_idx]
+        if zero_mean:
+            data -= np.mean(data)
+        time_axis = np.arange(len(data)) / self.sample_rate + self.data['time'][start_idx]
+        return Timeseries(time_axis, data, self.sample_rate)
 
 
 class TimeseriesPlotter:
@@ -97,7 +112,18 @@ class TimeseriesPlotter:
                   'max': r'$V_{max}=%.2f\ V$',
                   'std_ratio': r'$\frac{V_{max}}{\sigma}=%.2f$'}
 
-    def __init__(self, timeseries: Timeseries):
+    def __init__(self, timeseries: Timeseries = None):
+        self.timeseries = timeseries
+        if timeseries is not None:
+            self.STATS_FUNC = {'mean': self.timeseries.mean,
+                               'num_samples': self.timeseries.num_samples,
+                               'sample_rate': self.timeseries.get_sample_rate,
+                               'std': self.timeseries.std,
+                               'var': self.timeseries.var,
+                               'max': self.timeseries.max,
+                               'std_ratio': self.timeseries.stddev_ratio}
+
+    def set_timeseries(self, timeseries: Timeseries):
         self.timeseries = timeseries
         self.STATS_FUNC = {'mean': self.timeseries.mean,
                            'num_samples': self.timeseries.num_samples,
@@ -106,9 +132,6 @@ class TimeseriesPlotter:
                            'var': self.timeseries.var,
                            'max': self.timeseries.max,
                            'std_ratio': self.timeseries.stddev_ratio}
-
-    def set_timeseries(self, timeseries: Timeseries):
-        self.timeseries = timeseries
 
     def plot_time_domain(self,
                          x_label='',
@@ -209,6 +232,12 @@ class TimeseriesPlotter:
         return fig, ax, (slope, intercept, r)
 
 
+def timeseries_from_csv(filename, *args, **kwargs):
+    data = np.genfromtxt(filename, usecols=[0, 1], names=['time', 'amplitude'], delimiter=',')
+    sample_rate = 1 / np.mean(data['time'][1:] - data['time'][0:-1])
+    return Timeseries(data['time'], data['amplitude'], sample_rate)
+
+
 def playback_timeseries(timeseries: Timeseries, sample_rate=None):
     duration = timeseries.duration()
     if sample_rate:
@@ -221,7 +250,7 @@ def playback_timeseries(timeseries: Timeseries, sample_rate=None):
 
     # Play sound in speakers.
     sd.play(normalized_data, sample_rate)
-    time.sleep(duration)
+    sd.sleep(int(duration * 1000))
     sd.stop()
 
 
@@ -247,4 +276,11 @@ def play_and_record_timeseries(timeseries: Timeseries, sample_rate=None):
 
 
 def record_timeseries(duration=1.0, prompt=True, sample_rate=None):
-    pass
+    if prompt:
+        input(f"Press enter when ready to record for {duration} seconds at {sample_rate} samples per second...")
+    device_in = 1
+    with sd.InputStream(device=device_in, channels=1, samplerate=sample_rate, blocksize=int(duration * sample_rate)) as stream:
+        sd.sleep(int(duration * 1000))
+        recorded_data = stream.read(stream.read_available)
+    time_axis = np.arange(0, len(recorded_data[0])) / sample_rate
+    return Timeseries(time_axis, recorded_data[0], sample_rate)

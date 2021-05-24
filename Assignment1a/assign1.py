@@ -15,7 +15,6 @@
 
 import os
 import logging
-import pandas as pd
 from signal_analysis_tools.utilities import setup_logging
 from signal_analysis_tools.timeseries import *
 
@@ -47,6 +46,9 @@ def assign1a(data_file: str, log_level: int = None):
     # Set random seed for reproducibility
     np.random.seed(100)
 
+    # Create a timeseries plotter object
+    timeseries_plotter = TimeseriesPlotter()
+
     if log_level is not None:
         logger.setLevel(log_level)
     logger.log(logging.INFO, f"-----Starting analysis for {data_file}-----\n")
@@ -56,14 +58,10 @@ def assign1a(data_file: str, log_level: int = None):
 
     # Read in the data
     logger.log(logging.DEBUG, f"Reading input .CSV file...")
-    header_list = ['time', 'voltage']
-    data = pd.read_csv(data_file, usecols=[0, 1], names=header_list)
-
-    sample_rate = 1. / (data['time'].iloc[1] - data['time'].iloc[0])
-    timeseries = Timeseries(data['time'], data['voltage'], sample_rate)
+    timeseries = timeseries_from_csv(data_file)
 
     # Create a timeseries plotter object
-    timeseries_plotter = TimeseriesPlotter(timeseries)
+    timeseries_plotter.set_timeseries(timeseries)
 
     # Generate a figure and plot of the timeseries data.
     logger.log(logging.DEBUG, f"Plotting timeseries data...")

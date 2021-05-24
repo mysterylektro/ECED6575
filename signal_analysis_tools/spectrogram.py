@@ -53,21 +53,21 @@ class Spectrum:
     def negative_content(self):
         return self.data['amplitude'][self.num_samples() // 2 + 1:]
 
-    def to_timeseries(self):
-        amplitude = fft.ifft(self.data['amplitude'] * self.num_samples() * self.bin_size)
-        sample_rate = self.sample_rate()
-        time_axis = np.arange(self.num_samples()) / sample_rate
-        return Timeseries(time_axis, amplitude, sample_rate)
-
-    def single_sided_power_spectrum(self):
+    def single_sided_power_spectral_density(self):
         duration = self.duration()
-        weights = np.full(len(self.positive_content()), fill_value=2/duration)
-        weights[0] = 1/duration
-        weights[1] = 1/duration
-        return weights * np.conj(self.positive_content()) * self.positive_content()
+        weights = np.full(len(self.positive_content()), fill_value=2 / duration)
+        weights[0] = 1 / duration
+        weights[-1] = 1 / duration
+        return (weights * np.conj(self.positive_content()) * self.positive_content()).real
 
-    def double_sided_power_spectrum(self):
-        return (1. / self.duration()) * np.conj(self.data['amplitude']) * self.data['amplitude']
+    def single_sided_frequency(self):
+        return self.frequency()[0: self.num_samples() // 2 + 1]
+
+    def single_sided_amplitude(self):
+        return self.amplitude()[0: self.num_samples() // 2 + 1]
+
+    def double_sided_power_spectral_density(self):
+        return ((1. / self.duration()) * np.conj(self.data['amplitude']) * self.data['amplitude']).real
 
 
 def pink(n):
@@ -129,7 +129,21 @@ def generate_spectrum(n: int = 65536,
     return Spectrum(frequencies, spectrum, f_res)
 
 
-class SpectrumAnalyzer:
+def timeseries_to_spectrum(timeseries: Timeseries):
+    spectrum = fft.fft(timeseries.data['amplitude']) * 1 / timeseries.sample_rate
+    frequency_resolution = 1 / timeseries.duration()
+    frequency_axis = np.arange(len(timeseries.data['amplitude'])) * frequency_resolution
+    return Spectrum(frequency_axis, spectrum, frequency_resolution)
+
+
+def spectrum_to_timeseries(spectrum: Spectrum):
+    amplitude = fft.ifft(spectrum.data['amplitude'] * spectrum.num_samples() * spectrum.bin_size)
+    sample_rate = spectrum.sample_rate()
+    time_axis = np.arange(spectrum.num_samples()) / sample_rate
+    return Timeseries(time_axis, amplitude, sample_rate)
+
+
+class SpectrumPlotter:
     # Setup common graphics properties.
     TEXTBOX_PROPS = {'boxstyle': 'round', 'facecolor': 'white', 'alpha': 0.75}
 
@@ -137,7 +151,7 @@ class SpectrumAnalyzer:
     sns.plotting_context("paper")
     sns.set_style("darkgrid")
 
-    def __init__(self, spectrum: Spectrum):
+    def __init__(self, spectrum: Spectrum= None):
         self.spectrum = spectrum
 
     def set_spectrum(self, spectrum: Spectrum):
@@ -182,3 +196,64 @@ class SpectrumAnalyzer:
             fig.savefig(filename)
 
         return fig, spectrum_plot
+
+    def plot_magnitude(self,
+                       x_label='',
+                       y_label='',
+                       title='',
+                       y_lim=None,
+                       x_lim=None,
+                       positive_only=False,
+                       filename=None):
+
+        if positive_only:
+            frequency = self.spectrum.single_sided_frequency()
+            amplitude = self.spectrum.single_sided_amplitude()
+        else:
+            frequency = self.spectrum.frequency()
+            frequency -= (np.max(frequency) - self.spectrum.bin_size) / 2
+            amplitude = self.spectrum.amplitude()
+            amplitude = np.roll(amplitude, len(amplitude) // 2 - 1)
+
+        fig = plt.figure()
+        spectrum_plot = sns.lineplot(x=frequency, y=np.abs(amplitude))
+        spectrum_plot.set(xlabel=x_label, ylabel=y_label, title=title)
+        set_minor_gridlines(spectrum_plot)
+
+        if y_lim is not None:
+            plt.ylim(y_lim)
+
+        if x_lim is not None:
+            plt.xlim(x_lim)
+
+        if filename:
+            fig.savefig(filename)
+
+        return fig, spectrum_plot
+
+    def plot_single_sided_power_spectral_density(self,
+                                                 x_label='frequency (Hz)',
+                                                 y_label=r'$G_{xx}\ (\frac{V^{2}}{Hz})$',
+                                                 title='',
+                                                 y_lim=None,
+                                                 x_lim=None,
+                                                 filename=None):
+
+        f = self.spectrum.single_sided_frequency()
+        y = self.spectrum.single_sided_power_spectral_density()
+
+        fig = plt.figure()
+        psd_plot = sns.lineplot(x=f, y=y)
+        psd_plot.set(xlabel=x_label, ylabel=y_label, title=title)
+        set_minor_gridlines(psd_plot)
+
+        if y_lim is not None:
+            plt.ylim(y_lim)
+
+        if x_lim is not None:
+            plt.xlim(x_lim)
+
+        if filename:
+            fig.savefig(filename)
+
+        return fig, psd_plot
