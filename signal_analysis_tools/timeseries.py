@@ -164,6 +164,8 @@ class TimeseriesPlotter:
                            transform=line_plot.transAxes,
                            fontsize=14, verticalalignment='top', bbox=self.TEXTBOX_PROPS)
 
+        plt.tight_layout()
+
         if filename:
             fig.savefig(filename)
 
@@ -188,6 +190,8 @@ class TimeseriesPlotter:
 
         if x_lim is not None:
             plt.xlim(x_lim)
+
+        plt.tight_layout()
 
         if filename:
             fig.savefig(filename)
@@ -229,6 +233,8 @@ class TimeseriesPlotter:
                     transform=ax.transAxes,
                     fontsize=14, verticalalignment='top', bbox=self.TEXTBOX_PROPS)
 
+        plt.tight_layout()
+
         if filename:
             fig.savefig(filename)
 
@@ -252,9 +258,7 @@ def playback_timeseries(timeseries: Timeseries, sample_rate=None):
     normalized_data = data / np.max(data)
 
     # Play sound in speakers.
-    sd.play(normalized_data, sample_rate)
-    sd.sleep(int(duration * 1000))
-    sd.stop()
+    sd.play(normalized_data, sample_rate, blocking=True)
 
 
 def play_and_record_timeseries(timeseries: Timeseries, sample_rate=None):
@@ -267,22 +271,17 @@ def play_and_record_timeseries(timeseries: Timeseries, sample_rate=None):
 
     normalized_data = (data / np.max(data)).astype(np.float32)
 
-    with sd.Stream(device=(HEADSET_MICROPHONE, SPEAKERS), channels=1,
-                   samplerate=sample_rate, blocksize=len(normalized_data)) as stream:
-        stream.write(normalized_data)
-        recorded_data = stream.read(stream.read_available)
+    recorded_data = sd.playrec(normalized_data, samplerate=sample_rate, channels=1, blocking=True)
 
-    t = np.arange(len(recorded_data[0])) / sample_rate
-    return Timeseries(t, recorded_data[0], sample_rate)
+    t = np.arange(len(recorded_data)) / sample_rate
+    return Timeseries(t, recorded_data, sample_rate)
 
 
 def record_timeseries(duration=1.0, prompt=True, sample_rate=None):
     if prompt:
         input(f"Press enter when ready to record for {duration} seconds at {sample_rate} samples per second...")
 
-    with sd.InputStream(device=HEADSET_MICROPHONE, channels=1,
-                        samplerate=sample_rate, blocksize=int(duration * sample_rate)) as stream:
-        sd.sleep(int(duration * 1000))
-        recorded_data = stream.read(stream.read_available)
-    time_axis = np.arange(0, len(recorded_data[0])) / sample_rate
-    return Timeseries(time_axis, recorded_data[0], sample_rate)
+    recorded_data = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, blocking=True)
+
+    time_axis = np.arange(0, len(recorded_data)) / sample_rate
+    return Timeseries(time_axis, recorded_data, sample_rate)

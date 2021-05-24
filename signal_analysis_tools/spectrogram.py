@@ -130,7 +130,7 @@ def generate_spectrum(n: int = 65536,
 
 
 def timeseries_to_spectrum(timeseries: Timeseries):
-    spectrum = fft.fft(timeseries.data['amplitude']) * 1 / timeseries.sample_rate
+    spectrum = fft.fft(timeseries.data['amplitude'] / timeseries.sample_rate)
     frequency_resolution = 1 / timeseries.duration()
     frequency_axis = np.arange(len(timeseries.data['amplitude'])) * frequency_resolution
     return Spectrum(frequency_axis, spectrum, frequency_resolution)
@@ -158,8 +158,8 @@ class SpectrumPlotter:
         self.spectrum = spectrum
 
     def plot_spectrum(self,
-                      x_label='',
-                      y_label='',
+                      x_label='frequency (Hz)',
+                      y_label='linear amplitude (V)',
                       title='',
                       y_lim=None,
                       x_lim=None,
@@ -192,14 +192,16 @@ class SpectrumPlotter:
         if x_lim is not None:
             plt.xlim(x_lim)
 
+        plt.tight_layout()
+
         if filename:
             fig.savefig(filename)
 
         return fig, spectrum_plot
 
     def plot_magnitude(self,
-                       x_label='',
-                       y_label='',
+                       x_label='frequency (Hz)',
+                       y_label='linear magnitude (V)',
                        title='',
                        y_lim=None,
                        x_lim=None,
@@ -225,6 +227,8 @@ class SpectrumPlotter:
 
         if x_lim is not None:
             plt.xlim(x_lim)
+
+        plt.tight_layout()
 
         if filename:
             fig.savefig(filename)
@@ -252,6 +256,8 @@ class SpectrumPlotter:
 
         if x_lim is not None:
             plt.xlim(x_lim)
+
+        plt.tight_layout()
 
         if filename:
             fig.savefig(filename)
