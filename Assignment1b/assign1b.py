@@ -171,6 +171,8 @@ def assign1b(problems=None):
 
         logger.log(logging.DEBUG, "Starting playback and record of timeseries of random phase spectrum...")
         recorded_timeseries = play_and_record_timeseries(timeseries)
+        # Remove DC offset
+        recorded_timeseries.data['amplitude'] = recorded_timeseries.data['amplitude'] - recorded_timeseries.mean()
 
         logger.log(logging.DEBUG, "Plotting recorded timeseries...")
         ts_plotter.set_timeseries(recorded_timeseries)
@@ -193,6 +195,8 @@ def assign1b(problems=None):
                                                           'Spectrum of recorded white noise playback',
                                                     filename=f'{PLOT_DIR}{os.sep}problem_5_white_noise_playback_'
                                                              f'spectrum.png')
+        plt.semilogy()
+        fig.savefig(f'{PLOT_DIR}{os.sep}problem_5_white_noise_playback_spectrum_semilogy.png')
         plt.close(fig)
 
         # Duplicate timeseries.
@@ -203,6 +207,9 @@ def assign1b(problems=None):
 
         logger.log(logging.DEBUG, "Starting playback and record of duplicated timeseries of random phase spectrum...")
         recorded_timeseries = play_and_record_timeseries(timeseries)
+
+        # Remove DC offset
+        recorded_timeseries.data['amplitude'] = recorded_timeseries.data['amplitude'] - recorded_timeseries.mean()
 
         logger.log(logging.DEBUG, "Plotting recorded timeseries...")
         ts_plotter.set_timeseries(recorded_timeseries)
@@ -239,6 +246,8 @@ def assign1b(problems=None):
                                                           'Spectrum of recorded white noise subset',
                                                     filename=f'{PLOT_DIR}{os.sep}problem_5_double_white_noise_playback_'
                                                              f'subset_spectrum.png')
+        plt.semilogy()
+        fig.savefig(f'{PLOT_DIR}{os.sep}problem_5_double_white_noise_playback_subset_spectrum_semilogy.png')
         plt.close(fig)
 
     """
@@ -360,5 +369,5 @@ def assign1b(problems=None):
 
 if __name__ == '__main__':
     # p = [1,2,3,4,5,6,7,8]
-    p = [1, 5, 8]
+    p = [1, 5]
     assign1b(problems=p)
