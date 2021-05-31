@@ -28,7 +28,17 @@ def set_minor_gridlines(ax):
     ax.grid(b=True, which='minor', linewidth=0.5, linestyle=':')
 
 
-def setup_logging(assignment_name='1a'):
+def setup_logging(assignment_name: str = '1a'):
+    """
+    Helper function to set up and return a logger that outputs DEBUG+ statements to
+    the console, and INFO+ statements to a log file based on the assignment name.
+
+    Args:
+        assignment_name: Descriptor for the current assignment
+
+    Returns:
+
+    """
 
     # Setup logging.
     output_log_filename = f'assignment{assignment_name}.log'

@@ -278,7 +278,7 @@ def assign1b(problems=None):
 
         logger.log(logging.INFO, "Calculating mean square value, double sided integral value, "
                                  "and single sided integral value...\n")
-        mean_square_value = ts.rms() ** 2
+        mean_square_value = ts.mean_square()
         double_sided_integral = np.sum(spectrum.double_sided_power_spectral_density() * spectrum.bin_size)
         single_sided_integral = np.sum(spectrum.single_sided_power_spectral_density() * spectrum.bin_size)
 
@@ -368,6 +368,9 @@ def assign1b(problems=None):
 
 
 if __name__ == '__main__':
-    # p = [1,2,3,4,5,6,7,8]
-    p = [1, 5]
+    """
+    Select the problems you wish to solve. Note: Some problems require the completion of others
+    in order to complete. 
+    """
+    p = [1, 2, 3, 4, 5, 6, 7, 8]
     assign1b(problems=p)
