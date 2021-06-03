@@ -36,9 +36,9 @@ logger = setup_logging('2')
 # Set random seed for reproducibility.
 random.seed(100)
 
-text_strings = {'max_freq': r'$f_{max}\ =\ $%.2f Hz',
-                'psd_vrms': r'$f_{maxV_{rms}}\ =\ $%.2f $\frac{V}{\sqrt{Hz}}$',
-                'psd_mean_noise': r'$\mu_{noise}\ = \ $%.2f $\frac{V}{\sqrt{Hz}}$'}
+text_strings = {'peak_freq': r'$\mathcal{f}_{peak}\ =\ $%.2f Hz',
+                'peak_vrms': r'$V_{rms}\ =\ $%.2f V',
+                'mean_root_noise': r'$\mu_{n}\ = \ $%.2f $\frac{V}{\sqrt{Hz}}$'}
 
 
 def problem_1():
@@ -63,43 +63,43 @@ def problem_1():
     # Retrieve the single sided power spectrum and positive frequency axis for each record
     logger.log(logging.DEBUG, "Computing frequency axis and Gxx...")
     f = spectrogram.positive_frequency_axis()
-    gxx = spectrogram.gxx() * spectrogram.f_res
+    gxx = spectrogram.gxx()
 
     # Compute the mean Gxx over all 200 records
     logger.log(logging.DEBUG, "Computing mean Gxx...")
     mean_gxx = np.mean(gxx, axis=1)
 
-    # Compute RMS values:
-    rms_mean_gxx = np.sqrt(mean_gxx)
-
     # Compute the maximum value (RMS) and the corresponding frequency bin.
     logger.log(logging.DEBUG, "Computing maximum frequency and corresponding Vrms...")
-    max_idx = np.argmax(rms_mean_gxx)
+    max_idx = np.argmax(mean_gxx)
     max_freq = f[max_idx]
-    max_rms = rms_mean_gxx[max_idx]
+    max_gxx = mean_gxx[max_idx]
+    max_rms = np.sqrt(max_gxx * spectrogram.f_res)
 
     # Compute the mean noise
-    noise_columns = list(range(len(rms_mean_gxx)))
+    noise_columns = list(range(len(mean_gxx)))
     noise_columns.remove(max_idx)
-    mean_noise = np.mean(rms_mean_gxx[noise_columns])
+    mean_gxx_noise = np.mean(mean_gxx[noise_columns])
+    mean_root_gxx_noise = np.sqrt(mean_gxx_noise)
 
-    logger.log(logging.INFO, f"Mean Gxx max Vrms: {max_rms} V/sqrt(Hz)\n"
-                             f"Mean Gxx frequency: {max_freq} Hz\n"
-                             f"Mean Gxx noise: {mean_noise} V/sqrt(Hz)")
+    logger.log(logging.INFO, f"Mean Gxx - peak frequency: {max_freq} Hz\n"
+                             f"Mean Gxx - peak frequency Vrms: {max_rms} V\n"
+                             f"Mean Gxx noise: {mean_gxx_noise} V^2/Hz"
+                             f"Mean root Gxx noise: {mean_root_gxx_noise} V/sqrt(Hz)")
 
     # Generate a plot of the RMS values.
     logger.log(logging.DEBUG, "Generating plot...")
     fig = plt.figure()
-    psd_plot = sns.lineplot(x=f, y=rms_mean_gxx)
+    psd_plot = sns.lineplot(x=f, y=np.sqrt(mean_gxx))
     psd_plot.set(xlabel='frequency (Hz)',
                  ylabel=r'$\sqrt{PSD}\ \frac{V}{\sqrt{Hz}}$',
                  title='Assignment 2, Problem 1b\nMean $G_{xx}$, N = 200, FFT = 1024')
     set_minor_gridlines(psd_plot)
 
     # Overlay the textbox
-    text_string = '\n'.join([text_strings.get('max_freq') % max_freq,
-                             text_strings.get('psd_vrms') % max_rms,
-                             text_strings.get('psd_mean_noise') % mean_noise])
+    text_string = '\n'.join([text_strings.get('peak_freq') % max_freq,
+                             text_strings.get('peak_vrms') % max_rms,
+                             text_strings.get('mean_root_noise') % mean_root_gxx_noise])
 
     psd_plot.text(0.95, 0.95, text_string,
                   transform=psd_plot.transAxes,
@@ -124,20 +124,21 @@ def problem_1():
     set_minor_gridlines(psd_plot)
 
     logger.log(logging.DEBUG, "Computing individual Gxx Vrms...")
-    gxx_vrms = np.sqrt(gxx[max_idx, idx])
-    logger.log(logging.INFO, f"Gxx[{idx}] {max_freq} Hz Vrms: {gxx_vrms} V/sqrt(Hz)\n")
+    gxx_vrms = np.sqrt(gxx[max_idx, idx] * spectrogram.f_res)
 
     logger.log(logging.DEBUG, "Computing individual Gxx mean noise...")
     noise_columns = list(range(gxx.shape[0]))
     noise_columns.remove(max_idx)
-    mean_noise = np.mean(np.sqrt(gxx[noise_columns, idx]))
+    mean_root_noise = np.sqrt(np.mean(gxx[noise_columns, idx]))
 
-    logger.log(logging.INFO, f"Gxx[{idx}] mean Vrms noise: {mean_noise} V/sqrt(Hz)\n")
+    logger.log(logging.INFO, f"Gxx[{idx}] - peak frequency: {max_freq} Hz\n"
+                             f"Gxx[{idx}] - peak frequency Vrms: {gxx_vrms} V\n"
+                             f"Gxx[{idx}] - mean noise: {mean_root_noise} V/sqrt(Hz)\n")
 
     # Overlay the textbox
-    text_string = '\n'.join([text_strings.get('max_freq') % max_freq,
-                             text_strings.get('psd_vrms') % gxx_vrms,
-                             text_strings.get('psd_mean_noise') % mean_noise])
+    text_string = '\n'.join([text_strings.get('peak_freq') % max_freq,
+                             text_strings.get('peak_vrms') % gxx_vrms,
+                             text_strings.get('mean_root_noise') % mean_root_noise])
 
     psd_plot.text(0.95, 0.95, text_string,
                   transform=psd_plot.transAxes,
@@ -154,34 +155,34 @@ def problem_1():
     logger.log(logging.DEBUG, "Computing Gxx for full timeseries...")
     spectrum = timeseries_to_spectrum(timeseries)
     f = spectrum.positive_frequencies()
-    rms_gxx = np.sqrt(spectrum.single_sided_power_spectral_density() * spectrum.bin_size)
+    full_gxx = spectrum.single_sided_power_spectral_density()
 
     # Compute the maximum value (RMS) and the corresponding frequency bin.
     logger.log(logging.DEBUG, "Computing maximum frequency and corresponding Vrms...")
-    max_idx = np.argmax(rms_gxx)
+    max_idx = np.argmax(full_gxx)
     max_freq = f[max_idx]
-    max_rms = rms_gxx[max_idx]
+    max_rms = np.sqrt(full_gxx[max_idx] * spectrum.bin_size)
 
     # Compute the mean noise
-    noise_columns = list(range(len(rms_gxx)))
+    noise_columns = list(range(len(full_gxx)))
     noise_columns.remove(max_idx)
-    mean_noise = np.mean(rms_gxx[noise_columns])
+    mean_root_noise = np.sqrt(np.mean(full_gxx[noise_columns]))
 
-    logger.log(logging.INFO, f"Full Gxx max Vrms: {max_rms} V/sqrt(Hz)\n"
-                             f"Full Gxx frequency: {max_freq} Hz\n"
-                             f"Full Gxx noise: {mean_noise} V/sqrt(Hz)")
+    logger.log(logging.INFO, f"Full Gxx - peak frequency: {max_freq} Hz\n"
+                             f"Full Gxx - peak frequency Vrms: {max_rms} V\n"
+                             f"Full Gxx - mean root noise: {mean_root_noise} V/sqrt(Hz)")
 
     logger.log(logging.DEBUG, "Generating plot...")
     fig = plt.figure()
-    psd_plot = sns.lineplot(x=f, y=rms_gxx)
+    psd_plot = sns.lineplot(x=f, y=np.sqrt(full_gxx))
     psd_plot.set(xlabel='frequency (Hz)',
                  ylabel=r'$\sqrt{PSD}\ \frac{V}{\sqrt{Hz}}$',
                  title='Assignment 2, Problem 1d\nFull timeseries $G_{xx}$, FFT = 204800')
 
     # Overlay the textbox
-    text_string = '\n'.join([text_strings.get('max_freq') % max_freq,
-                             text_strings.get('psd_vrms') % max_rms,
-                             text_strings.get('psd_mean_noise') % mean_noise])
+    text_string = '\n'.join([text_strings.get('peak_freq') % max_freq,
+                             text_strings.get('peak_vrms') % max_rms,
+                             text_strings.get('mean_root_noise') % mean_root_noise])
 
     psd_plot.text(0.95, 0.95, text_string,
                   transform=psd_plot.transAxes,
