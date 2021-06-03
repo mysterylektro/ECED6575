@@ -29,29 +29,30 @@ class Timeseries:
     """
 
     def __init__(self,
-                 time_axis: np.array,
-                 amplitude: np.array,
-                 sample_rate: float = None,
+                 samples: np.array,
+                 sample_rate: float,
+                 time_offset: float = 0.0,
                  name: str = ''):
         """
         Initialize a Timeseries class. If a sample rate is provided, the time axis will be recomputed based on that
         value. If the sample rate is not provided, it will be computed based on the provided time axis.
 
         Args:
-            time_axis: time values (in seconds) for each sample.
-            amplitude: measured values for each sample (in sampled units)
+            samples: measured values for each sample (in sampled units)
             sample_rate: how often the samples are sampled (in Hz)
             name: a descriptor for the timeseries.
         """
 
-        self.data = np.array([*zip(time_axis, amplitude)], dtype=[('time', time_axis.dtype),
-                                                                  ('amplitude', amplitude.dtype)])
-        if sample_rate is None:
-            self.sample_rate = (time_axis[-1] - time_axis[0]) / (len(time_axis) - 1)
-        else:
-            self.sample_rate = None
-            self.set_sample_rate(sample_rate)
+        self.sample_rate = sample_rate
+        self.time_offset = time_offset
         self.name = name
+
+        time_axis = np.arange(len(samples)) / self.sample_rate + self.time_offset
+        self.data = np.array([*zip(time_axis, samples)], dtype=[('time', time_axis.dtype),
+                                                                ('amplitude', samples.dtype)])
+
+    def update_time_axis(self):
+        self.data['time'] = np.arange(self.num_samples()) / self.sample_rate + self.time_offset
 
     def set_sample_rate(self, sample_rate: float):
         """
@@ -64,7 +65,11 @@ class Timeseries:
 
         """
         self.sample_rate = sample_rate
-        self.data['time'] = np.arange(self.num_samples()) / self.sample_rate
+        self.update_time_axis()
+
+    def set_time_offset(self, time_offset: float):
+        self.time_offset = time_offset
+        self.update_time_axis()
 
     def duration(self) -> float:
         """

@@ -457,3 +457,73 @@ class SpectrumPlotter:
             fig.savefig(filename)
 
         return fig, psd_plot
+
+
+class Spectrogram:
+
+    def __init__(self,
+                 amplitudes: np.array,
+                 f_res: float,
+                 t_res: float):
+
+        """
+
+        Args:
+            amplitudes: must be a complex array of shape (nBins, nRecords)
+                        where bins = frequency bins, and records = time records.
+                        This assumes the positive content of the spectrum only,
+                        with the negative content calculable using the complex conjugate.
+            f_res: The frequency resolution (Hz) of axis 0
+            t_res: The time resolution (s) of axis 1
+        """
+
+        self.data = amplitudes
+        self.f_res = f_res
+        self.t_res = t_res
+        self.start_time = 0
+        self.end_time = self.data.shape[1] * self.t_res + self.start_time
+
+    def positive_frequency_axis(self):
+        return np.linspace(0, self.data.shape[0] * self.f_res / 2, int(self.data.shape[0] / 2), endpoint=False)
+
+    def frequency_axis(self):
+        return np.concatenate(self.positive_frequency_axis(), -1 * self.positive_frequency_axis()[::-1][1:-1])
+
+    def time_axis(self):
+        return np.linspace(self.start_time, self.end_time, self.data.shape[1], endpoint=True)
+
+    def gxx(self):
+        positive_data = self.data[:int(self.data.shape[0] / 2), :]
+        record_duration = 1 / self.f_res
+        weights = np.full_like(positive_data, fill_value=2, dtype=float)
+        weights[0, :], weights[-1, :] = 1, 1
+        return ((weights / record_duration) * np.conj(positive_data) * positive_data).real
+
+
+def timeseries_to_spectrogram(timeseries: Timeseries,
+                              fft_size: int = 1024,
+                              n_time_samples: int = 1024):
+    """
+    # TODO: Introduce overlap + windowing
+
+    Args:
+        timeseries:
+        fft_size:
+        n_time_samples:
+
+    Returns:
+
+    """
+
+    num_records = len(timeseries.data) // n_time_samples
+    time_data = np.zeros((fft_size, num_records), dtype=float)
+
+    # Reshape the timeseries data into bins of n_time_samples:
+    time_data[:n_time_samples, :] = np.reshape(timeseries.data['amplitude'][:(num_records * n_time_samples)],
+                                               (n_time_samples, num_records), order='F')
+
+    spectrogram_data = fft.fft(time_data / timeseries.sample_rate, fft_size, axis=0)
+    t_res = n_time_samples / timeseries.sample_rate
+    f_res = 1 / t_res
+
+    return Spectrogram(spectrogram_data, f_res, t_res)
