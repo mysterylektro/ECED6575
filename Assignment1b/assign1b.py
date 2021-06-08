@@ -279,8 +279,8 @@ def assign1b(problems=None):
         logger.log(logging.INFO, "Calculating mean square value, double sided integral value, "
                                  "and single sided integral value...\n")
         mean_square_value = ts.mean_square()
-        double_sided_integral = np.sum(spectrum.double_sided_power_spectral_density() * spectrum.bin_size)
-        single_sided_integral = np.sum(spectrum.single_sided_power_spectral_density() * spectrum.bin_size)
+        double_sided_integral = np.sum(spectrum.sxx() * spectrum.f_res)
+        single_sided_integral = np.sum(spectrum.gxx() * spectrum.f_res)
 
         logger.log(logging.INFO, f'Mean square value: {mean_square_value}\n'
                                  f'Double sided integral: {double_sided_integral}\n'
@@ -315,8 +315,8 @@ def assign1b(problems=None):
         logger.log(logging.INFO, "Calculating mean square value, double sided integral value, "
                                  "and single sided integral value...\n")
         mean_square_value = ts.rms() ** 2
-        double_sided_integral = np.sum(spectrum.double_sided_power_spectral_density() * spectrum.bin_size)
-        single_sided_integral = np.sum(spectrum.single_sided_power_spectral_density() * spectrum.bin_size)
+        double_sided_integral = np.sum(spectrum.sxx() * spectrum.f_res)
+        single_sided_integral = np.sum(spectrum.gxx() * spectrum.f_res)
 
         logger.log(logging.INFO, f'Mean square value: {mean_square_value}\n'
                                  f'Double sided integral: {double_sided_integral}\n'
@@ -326,7 +326,7 @@ def assign1b(problems=None):
                                  f"rms estimate from single sided power spectral density...\n")
 
         rms = ts.rms()
-        gxx_rms = np.sqrt(np.max(spectrum.single_sided_power_spectral_density()) * spectrum.bin_size)
+        gxx_rms = np.sqrt(np.max(spectrum.gxx()) * spectrum.f_res)
 
         logger.log(logging.INFO, f'Timeseries RMS: {rms}\nGxx RMS: {gxx_rms}\n')
 

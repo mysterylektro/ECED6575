@@ -22,22 +22,22 @@ class Spectrum:
     computing statistic on the underlying data.
     """
     def __init__(self,
-                 frequencies: np.array,
-                 amplitude: np.array,
-                 bin_size: float,
+                 amplitudes: np.array,
+                 f_res: float,
                  name: str = ''):
         """
 
         Args:
-            frequencies: frequency values (in Hz) for each frequency bin
-            amplitude: measured values for each frequency bin (in sampled units)
-            bin_size: the size (in Hz) of each frequency bin.
+            amplitudes: measured values for each frequency bin (in sampled units)
+            f_res: the size (in Hz) of each frequency bin.
             name: a descriptor for the Spectrum.
         """
-        self.data = np.array([*zip(frequencies, amplitude)], dtype=[('frequency', frequencies.dtype),
-                                                                    ('amplitude', amplitude.dtype)])
-        self.bin_size = bin_size
+        self.f_res = f_res
         self.name = name
+
+        freq_axis = np.arange(len(amplitudes)) * self.f_res
+        self.data = np.array([*zip(freq_axis, amplitudes)], dtype=[('frequency', freq_axis.dtype),
+                                                                   ('amplitude', amplitudes.dtype)])
 
     def frequency(self) -> np.array:
         """
@@ -53,7 +53,7 @@ class Spectrum:
         Returns: the sample rate of the corresponding timeseries.
 
         """
-        return self.num_samples() * self.bin_size
+        return self.num_samples() * self.f_res
 
     def duration(self) -> float:
         """
@@ -127,19 +127,18 @@ class Spectrum:
         """
         return self.frequency()[0: self.num_samples() // 2 + 1]
 
-    def single_sided_power_spectral_density(self) -> np.array:
+    def gxx(self) -> np.array:
         """
 
         Returns: The single-sided power spectral density of the spectrum.
 
         """
-        duration = self.duration()
         positive_content = self.positive_content()
         weights = np.full(len(positive_content), fill_value=2)
         weights[0], weights[-1] = 1, 1
-        return ((weights / duration) * np.conj(positive_content) * positive_content).real
+        return ((weights / self.duration()) * np.conj(positive_content) * positive_content).real
 
-    def double_sided_power_spectral_density(self) -> np.array:
+    def sxx(self) -> np.array:
         """
 
         Returns: The double-sided power spectral density of the spectrum.
@@ -235,10 +234,7 @@ def generate_spectrum(n: int = 65536,
     spectrum[n // 2] = 0 + 0j
     spectrum[n // 2 + 1:] = np.flip(np.conj(pos_freq))
 
-    # Create frequency axis
-    frequencies = np.arange(n) * f_res
-
-    return Spectrum(frequencies, spectrum, f_res)
+    return Spectrum(spectrum, f_res)
 
 
 def timeseries_to_spectrum(timeseries: Timeseries) -> Spectrum:
@@ -253,8 +249,7 @@ def timeseries_to_spectrum(timeseries: Timeseries) -> Spectrum:
     """
     spectrum = fft.fft(timeseries.data['amplitude'] / timeseries.sample_rate)
     frequency_resolution = 1 / timeseries.duration()
-    frequency_axis = np.arange(len(timeseries.data['amplitude'])) * frequency_resolution
-    return Spectrum(frequency_axis, spectrum, frequency_resolution)
+    return Spectrum(spectrum, frequency_resolution)
 
 
 def spectrum_to_timeseries(spectrum: Spectrum) -> Timeseries:
@@ -267,10 +262,9 @@ def spectrum_to_timeseries(spectrum: Spectrum) -> Timeseries:
     Returns: the corresponding Timeseries
 
     """
-    amplitude = fft.ifft(spectrum.data['amplitude'] * spectrum.num_samples() * spectrum.bin_size)
+    amplitude = fft.ifft(spectrum.data['amplitude'] * spectrum.num_samples() * spectrum.f_res)
     sample_rate = spectrum.sample_rate()
-    time_axis = np.arange(spectrum.num_samples()) / sample_rate
-    return Timeseries(time_axis, amplitude, sample_rate)
+    return Timeseries(amplitude, sample_rate)
 
 
 class SpectrumPlotter:
@@ -329,7 +323,7 @@ class SpectrumPlotter:
         """
 
         frequency = self.spectrum.frequency()
-        frequency -= (np.max(frequency) - self.spectrum.bin_size) / 2
+        frequency -= (np.max(frequency) - self.spectrum.f_res) / 2
 
         amplitude = self.spectrum.amplitude()
         amplitude = np.roll(amplitude, len(amplitude) // 2 - 1)
@@ -393,7 +387,7 @@ class SpectrumPlotter:
             amplitude = self.spectrum.positive_content()
         else:
             frequency = self.spectrum.frequency()
-            frequency -= (np.max(frequency) - self.spectrum.bin_size) / 2
+            frequency -= (np.max(frequency) - self.spectrum.f_res) / 2
             amplitude = self.spectrum.amplitude()
             amplitude = np.roll(amplitude, len(amplitude) // 2 - 1)
 
@@ -438,7 +432,7 @@ class SpectrumPlotter:
         """
 
         f = self.spectrum.positive_frequencies()
-        y = self.spectrum.single_sided_power_spectral_density()
+        y = self.spectrum.gxx()
 
         fig = plt.figure()
         psd_plot = sns.lineplot(x=f, y=y)
@@ -502,28 +496,37 @@ class Spectrogram:
 
 def timeseries_to_spectrogram(timeseries: Timeseries,
                               fft_size: int = 1024,
-                              n_time_samples: int = 1024):
+                              n_samples: int = 1024,
+                              n_records: int = None,
+                              synchronization_offset: int = 0):
     """
     # TODO: Introduce overlap + windowing
 
     Args:
+        n_records:
+        synchronization_offset:
         timeseries:
         fft_size:
-        n_time_samples:
+        n_samples:
 
     Returns:
 
     """
+    total_samples = n_samples + synchronization_offset
 
-    num_records = len(timeseries.data) // n_time_samples
-    time_data = np.zeros((fft_size, num_records), dtype=float)
+    if n_records is None:
+        n_records = len(timeseries.data) // total_samples
+
+    time_data = np.zeros((fft_size, n_records), dtype=float)
 
     # Reshape the timeseries data into bins of n_time_samples:
-    time_data[:n_time_samples, :] = np.reshape(timeseries.data['amplitude'][:(num_records * n_time_samples)],
-                                               (n_time_samples, num_records), order='F')
+
+    input_data = np.reshape(timeseries.data['amplitude'][:(n_records * total_samples)], (total_samples, n_records),
+                            order='F')
+    time_data[:n_samples, :] = input_data[:n_samples, :]
 
     spectrogram_data = fft.fft(time_data / timeseries.sample_rate, fft_size, axis=0)
-    t_res = n_time_samples / timeseries.sample_rate
+    t_res = n_samples / timeseries.sample_rate
     f_res = 1 / t_res
 
     return Spectrogram(spectrogram_data, f_res, t_res)
