@@ -202,8 +202,7 @@ def assign1b(problems=None):
         # Duplicate timeseries.
         logger.log(logging.DEBUG, "Concatenating random phase timeseries into two duplicates...")
         amplitude = np.concatenate([timeseries.amplitude(), timeseries.amplitude()])
-        t = np.arange(len(amplitude)) / timeseries.sample_rate
-        timeseries = Timeseries(t, amplitude, timeseries.sample_rate)
+        timeseries = Timeseries(amplitude, timeseries.sample_rate)
 
         logger.log(logging.DEBUG, "Starting playback and record of duplicated timeseries of random phase spectrum...")
         recorded_timeseries = play_and_record_timeseries(timeseries)

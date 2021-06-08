@@ -107,8 +107,7 @@ def assign1a(data_file: str, log_level: int = None):
 
     # Generate zero-mean time series and calculate variance and standard deviation.
     logger.log(logging.DEBUG, f"Generating zero-mean timeseries...")
-    zero_mean_timeseries = Timeseries(timeseries.time(),
-                                      timeseries.amplitude() - timeseries.mean(),
+    zero_mean_timeseries = Timeseries(timeseries.amplitude() - timeseries.mean(),
                                       timeseries.sample_rate)
 
     # Log computed values to file

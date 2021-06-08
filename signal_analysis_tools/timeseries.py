@@ -429,7 +429,7 @@ def timeseries_from_csv(filename, *args, **kwargs) -> Timeseries:
     """
     data = np.genfromtxt(filename, usecols=[0, 1], names=['time', 'amplitude'], delimiter=',', *args, **kwargs)
     sample_rate = 1 / np.mean(data['time'][1:] - data['time'][0:-1])
-    return Timeseries(data['time'], data['amplitude'], sample_rate=sample_rate)
+    return Timeseries(data['amplitude'], sample_rate=sample_rate)
 
 
 def playback_timeseries(timeseries: Timeseries, sample_rate=None) -> None:
@@ -479,9 +479,7 @@ def play_and_record_timeseries(timeseries: Timeseries, sample_rate=None) -> Time
     normalized_data = (data / np.max(data)).astype(np.float32)
 
     recorded_data = sd.playrec(normalized_data, samplerate=sample_rate, channels=1, blocking=True)
-
-    t = np.arange(len(recorded_data)) / sample_rate
-    return Timeseries(t, recorded_data, sample_rate)
+    return Timeseries(recorded_data, sample_rate)
 
 
 def record_timeseries(duration: float = 1.0, prompt: bool = True, sample_rate: float = 44100) -> Timeseries:
@@ -501,5 +499,4 @@ def record_timeseries(duration: float = 1.0, prompt: bool = True, sample_rate: f
 
     recorded_data = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, blocking=True)
 
-    time_axis = np.arange(0, len(recorded_data)) / sample_rate
-    return Timeseries(time_axis, recorded_data, sample_rate)
+    return Timeseries(recorded_data, sample_rate)
