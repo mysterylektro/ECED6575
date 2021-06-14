@@ -415,6 +415,7 @@ class SpectrumPlotter:
                                                  title='',
                                                  y_lim=None,
                                                  x_lim=None,
+                                                 y_log=False,
                                                  filename=None):
         """
         This function will plot the single-sided power spectral density of the Spectrum.
@@ -425,6 +426,7 @@ class SpectrumPlotter:
             title: Desired title for the plot
             y_lim: A manual override to set the y axis limits
             x_lim: A manual override to set the x axis limits
+            y_log: A manual switch to plot semilogy axis
             filename: If provided, will save the figure to the filename path.
 
         Returns: a Tuple of (axis, figure)
@@ -444,6 +446,9 @@ class SpectrumPlotter:
 
         if x_lim is not None:
             plt.xlim(x_lim)
+
+        if y_log:
+            plt.semilogy()
 
         plt.tight_layout()
 
@@ -487,7 +492,7 @@ class Spectrogram:
         return np.linspace(self.start_time, self.end_time, self.data.shape[1], endpoint=True)
 
     def gxx(self):
-        positive_data = self.data[:int(self.data.shape[0] / 2), :]
+        positive_data = self.data[:int(self.data.shape[0] // 2), :]
         record_duration = 1 / self.f_res
         weights = np.full_like(positive_data, fill_value=2, dtype=float)
         weights[0, :], weights[-1, :] = 1, 1

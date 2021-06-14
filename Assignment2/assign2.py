@@ -53,7 +53,7 @@ def problem_1():
         fig = plt.figure()
         psd_plot = sns.lineplot(x=freq, y=np.sqrt(gxx))
         psd_plot.set(xlabel='frequency (Hz)',
-                     ylabel=r'$\sqrt{PSD}\ \frac{V}{\sqrt{Hz}}$',
+                     ylabel=r'$\sqrt{PSD}\ (\frac{V}{\sqrt{Hz}})$',
                      title=title)
         set_minor_gridlines(psd_plot)
 
@@ -178,18 +178,21 @@ def problem_1():
 
 
 def problem_2():
-    def generate_psd_plot(freq, gxx, output_filename, title='', xlim=None):
+    def generate_psd_plot(freq, gxx, output_filename, title='', xlim=None, ylog=False):
         # Generate a plot of the RMS values.
         logger.log(logging.DEBUG, "Generating plot...")
         figure = plt.figure()
         psd_plot = sns.lineplot(x=freq, y=gxx)
         psd_plot.set(xlabel='frequency (Hz)',
-                     ylabel=r'$PSD\ \frac{V^2}{Hz}$',
+                     ylabel=r'$PSD\ (\frac{V^2}{Hz}$)',
                      title=title)
         set_minor_gridlines(psd_plot)
 
         if xlim:
             plt.xlim(*xlim)
+
+        if ylog:
+            plt.semilogy()
 
         # Save the figure
         logger.log(logging.DEBUG, "Saving plot...")
@@ -223,10 +226,14 @@ def problem_2():
     filename = PLOT_DIR + os.sep + 'problem_2a_mean_desync_gxx.png'
     plot_title = 'Assignment 2, Problem 2a\nMean de-synchronized power spectrum'
     generate_psd_plot(f, mean_desync_gxx, filename, title=plot_title)
+    filename = PLOT_DIR + os.sep + 'problem_2a_mean_desync_gxx_log.png'
+    generate_psd_plot(f, mean_desync_gxx, filename, title=plot_title, ylog=True)
 
     logger.log(logging.DEBUG, "Zooming in on peak...")
     filename = PLOT_DIR + os.sep + 'problem_2a_mean_desync_gxx_zoom.png'
     generate_psd_plot(f, mean_desync_gxx, filename, title=plot_title, xlim=zoom_xlim)
+    filename = PLOT_DIR + os.sep + 'problem_2a_mean_desync_gxx_zoom_log.png'
+    generate_psd_plot(f, mean_desync_gxx, filename, title=plot_title, xlim=zoom_xlim, ylog=True)
 
     # ----- part b ----- #
     logger.log(logging.DEBUG, "\nStarting problem 2b...\n")
@@ -244,10 +251,14 @@ def problem_2():
     filename = PLOT_DIR + os.sep + 'problem_2b_mean_sync_gxx.png'
     plot_title = 'Assignment 2, Problem 2b\nMean synchronized power spectrum'
     generate_psd_plot(f, mean_sync_gxx, filename, title=plot_title)
+    filename = PLOT_DIR + os.sep + 'problem_2b_mean_sync_gxx_log.png'
+    generate_psd_plot(f, mean_sync_gxx, filename, title=plot_title, ylog=True)
 
     logger.log(logging.DEBUG, "Zooming in on peak...")
     filename = PLOT_DIR + os.sep + 'problem_2b_mean_sync_gxx_zoom.png'
     generate_psd_plot(f, mean_sync_gxx, filename, title=plot_title, xlim=zoom_xlim)
+    filename = PLOT_DIR + os.sep + 'problem_2b_mean_sync_gxx_zoom_log.png'
+    generate_psd_plot(f, mean_sync_gxx, filename, title=plot_title, xlim=zoom_xlim, ylog=True)
 
     # ---- part c ---- #
     logger.log(logging.DEBUG, "\nStarting problem 2c...\n")
@@ -261,16 +272,21 @@ def problem_2():
 
     f = mean_linear_sync_spectrum.positive_frequencies()
     plot_title = 'Assignment 2, Problem 2c\nPower spectrum of mean synchronized linear spectrum'
-    generate_psd_plot(f,
-                      mean_linear_sync_spectrum_gxx,
+    generate_psd_plot(f, mean_linear_sync_spectrum_gxx,
                       PLOT_DIR + os.sep + 'problem_2c_mean_linear_sync_spectrum_gxx.png',
                       title=plot_title)
+    generate_psd_plot(f, mean_linear_sync_spectrum_gxx,
+                      PLOT_DIR + os.sep + 'problem_2c_mean_linear_sync_spectrum_gxx_log.png',
+                      title=plot_title, ylog=True)
 
     logger.log(logging.DEBUG, "Zooming in on peak...")
-    generate_psd_plot(f,
-                      mean_linear_sync_spectrum_gxx,
+    generate_psd_plot(f, mean_linear_sync_spectrum_gxx,
                       PLOT_DIR + os.sep + 'problem_2c_mean_linear_sync_spectrum_gxx_zoom.png',
                       title=plot_title,
+                      xlim=zoom_xlim)
+    generate_psd_plot(f, mean_linear_sync_spectrum_gxx,
+                      PLOT_DIR + os.sep + 'problem_2c_mean_linear_sync_spectrum_gxx_zoom_log.png',
+                      title=plot_title, ylog=True,
                       xlim=zoom_xlim)
 
     # --- Calculate de-synchronized spectrum
@@ -282,16 +298,22 @@ def problem_2():
 
     f = mean_linear_desync_spectrum.positive_frequencies()
     plot_title = 'Assignment 2, Problem 2c\nPower spectrum of mean de-synchronized linear spectrum'
-    generate_psd_plot(f,
-                      mean_linear_desync_spectrum_gxx,
+    generate_psd_plot(f, mean_linear_desync_spectrum_gxx,
                       PLOT_DIR + os.sep + 'problem_2c_mean_linear_desync_spectrum_gxx.png',
                       title=plot_title)
+    generate_psd_plot(f, mean_linear_desync_spectrum_gxx,
+                      PLOT_DIR + os.sep + 'problem_2c_mean_linear_desync_spectrum_gxx_log.png',
+                      title=plot_title, ylog=True)
 
     logger.log(logging.DEBUG, "Zooming in on peak...")
-    generate_psd_plot(f,
-                      mean_linear_desync_spectrum_gxx,
+    generate_psd_plot(f, mean_linear_desync_spectrum_gxx,
                       PLOT_DIR + os.sep + 'problem_2c_mean_linear_desync_spectrum_gxx_zoom.png',
                       title=plot_title,
+                      xlim=zoom_xlim)
+
+    generate_psd_plot(f, mean_linear_desync_spectrum_gxx,
+                      PLOT_DIR + os.sep + 'problem_2c_mean_linear_desync_spectrum_gxx_zoom_log.png',
+                      title=plot_title, ylog=True,
                       xlim=zoom_xlim)
 
     # ----- part d ----- #
@@ -340,6 +362,11 @@ def problem_2():
     fig, p = spectrum_plotter.plot_single_sided_power_spectral_density(filename=filename,
                                                                        title=plot_title)
     plt.close(fig)
+    filename = PLOT_DIR + os.sep + 'problem_2e_sync_time_average_spectrum_log.png'
+    fig, p = spectrum_plotter.plot_single_sided_power_spectral_density(filename=filename,
+                                                                       title=plot_title,
+                                                                       y_log=True)
+    plt.close(fig)
 
     logger.log(logging.DEBUG, "Zooming in on peak...")
     logger.log(logging.DEBUG, "Generating and saving plot...")
@@ -347,6 +374,12 @@ def problem_2():
     fig, p = spectrum_plotter.plot_single_sided_power_spectral_density(filename=filename,
                                                                        title=plot_title,
                                                                        x_lim=zoom_xlim)
+    plt.close(fig)
+    filename = PLOT_DIR + os.sep + 'problem_2e_sync_time_average_spectrum_zoom_log.png'
+    fig, p = spectrum_plotter.plot_single_sided_power_spectral_density(filename=filename,
+                                                                       title=plot_title,
+                                                                       x_lim=zoom_xlim,
+                                                                       y_log=True)
     plt.close(fig)
 
 
