@@ -70,3 +70,6 @@ class WaveFileReader:
             self.pos += num_samples_read
 
         return data_out
+
+    def full_wavefile(self) -> Timeseries:
+        return self.next_samples(self.num_samples)

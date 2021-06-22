@@ -21,10 +21,12 @@ class Spectrum:
     Base class for storing Spectrum data. This class provides built-in functions for
     computing statistic on the underlying data.
     """
+
     def __init__(self,
                  amplitudes: np.array,
                  f_res: float,
-                 name: str = ''):
+                 name: str = '',
+                 window=None):
         """
 
         Args:
@@ -34,10 +36,23 @@ class Spectrum:
         """
         self.f_res = f_res
         self.name = name
+        if window is None:
+            self.window = np.ones(len(amplitudes))
+        else:
+            self.window = window
 
         freq_axis = np.arange(len(amplitudes)) * self.f_res
         self.data = np.array([*zip(freq_axis, amplitudes)], dtype=[('frequency', freq_axis.dtype),
                                                                    ('amplitude', amplitudes.dtype)])
+
+    def effective_frequency_resolution(self):
+        return self.f_res * len(self.window) * np.sum(self.window ** 2) / np.sum(self.window) ** 2
+
+    def energy_window_correction(self):
+        return len(self.window) / np.sum(self.window ** 2)
+
+    def amplitude_window_correction(self):
+        return (len(self.window) / np.sum(self.window))**2
 
     def frequency(self) -> np.array:
         """
@@ -127,7 +142,7 @@ class Spectrum:
         """
         return self.frequency()[0: self.num_samples() // 2 + 1]
 
-    def gxx(self) -> np.array:
+    def gxx(self, fixed_energy=True, no_correction=False) -> np.array:
         """
 
         Returns: The single-sided power spectral density of the spectrum.
@@ -136,15 +151,20 @@ class Spectrum:
         positive_content = self.positive_content()
         weights = np.full(len(positive_content), fill_value=2)
         weights[0], weights[-1] = 1, 1
-        return ((weights / self.duration()) * np.conj(positive_content) * positive_content).real
+        if no_correction:
+            correction_factor = 1
+        else:
+            correction_factor = self.energy_window_correction() if fixed_energy else self.amplitude_window_correction()
+        return np.abs((correction_factor * weights / self.duration()) * np.conj(positive_content) * positive_content)
 
-    def sxx(self) -> np.array:
+    def sxx(self, fixed_energy=True) -> np.array:
         """
 
         Returns: The double-sided power spectral density of the spectrum.
 
         """
-        return ((1. / self.duration()) * np.conj(self.data['amplitude']) * self.data['amplitude']).real
+        correction_factor = self.energy_window_correction() if fixed_energy else self.amplitude_window_correction()
+        return np.abs((correction_factor / self.duration()) * np.conj(self.data['amplitude']) * self.data['amplitude'])
 
 
 def pink(n) -> np.array:
@@ -237,7 +257,7 @@ def generate_spectrum(n: int = 65536,
     return Spectrum(spectrum, f_res)
 
 
-def timeseries_to_spectrum(timeseries: Timeseries) -> Spectrum:
+def timeseries_to_spectrum(timeseries: Timeseries, window=None) -> Spectrum:
     """
     Helper function to create the corresponding spectrum from a timeseries class.
 
@@ -247,9 +267,12 @@ def timeseries_to_spectrum(timeseries: Timeseries) -> Spectrum:
     Returns: The corresponding Spectrum
 
     """
-    spectrum = fft.fft(timeseries.data['amplitude'] / timeseries.sample_rate)
+    if window is None:
+        window = np.ones(len(timeseries.data['amplitude']))
+
+    spectrum = fft.fft(timeseries.data['amplitude'] * window / timeseries.sample_rate)
     frequency_resolution = 1 / timeseries.duration()
-    return Spectrum(spectrum, frequency_resolution)
+    return Spectrum(spectrum, frequency_resolution, window=window)
 
 
 def spectrum_to_timeseries(spectrum: Spectrum) -> Timeseries:
@@ -409,14 +432,15 @@ class SpectrumPlotter:
 
         return fig, spectrum_plot
 
-    def plot_single_sided_power_spectral_density(self,
-                                                 x_label='frequency (Hz)',
-                                                 y_label=r'$G_{xx}\ (\frac{V^{2}}{Hz})$',
-                                                 title='',
-                                                 y_lim=None,
-                                                 x_lim=None,
-                                                 y_log=False,
-                                                 filename=None):
+    def plot_gxx(self,
+                 x_label='frequency (Hz)',
+                 y_label=r'$G_{xx}\ (\frac{V^{2}}{Hz})$',
+                 title='',
+                 y_lim=None,
+                 x_lim=None,
+                 y_log=False,
+                 filename=None,
+                 **kwargs):
         """
         This function will plot the single-sided power spectral density of the Spectrum.
 
@@ -437,7 +461,110 @@ class SpectrumPlotter:
         y = self.spectrum.gxx()
 
         fig = plt.figure()
-        psd_plot = sns.lineplot(x=f, y=y)
+
+        psd_plot = sns.lineplot(x=f, y=y, **kwargs)
+        psd_plot.set(xlabel=x_label, ylabel=y_label, title=title)
+        set_minor_gridlines(psd_plot)
+
+        if y_lim is not None:
+            plt.ylim(y_lim)
+
+        if x_lim is not None:
+            plt.xlim(x_lim)
+
+        if y_log:
+            plt.semilogy()
+
+        plt.tight_layout()
+
+        if filename:
+            fig.savefig(filename)
+
+        return fig, psd_plot
+
+    def plot_root_gxx(self,
+                      x_label='frequency (Hz)',
+                      y_label=r'$sqrt{PSD}\ (\frac{V}{\sqrt{Hz}})$',
+                      title='',
+                      y_lim=None,
+                      x_lim=None,
+                      y_log=False,
+                      filename=None,
+                      **kwargs):
+        """
+        This function will plot the single-sided power spectral density of the Spectrum.
+
+        Args:
+            x_label: Desired label for the x axis (frequency)
+            y_label: Desired label for the y axis (Gxx)
+            title: Desired title for the plot
+            y_lim: A manual override to set the y axis limits
+            x_lim: A manual override to set the x axis limits
+            y_log: A manual switch to plot semilogy axis
+            filename: If provided, will save the figure to the filename path.
+
+        Returns: a Tuple of (axis, figure)
+
+        """
+
+        f = self.spectrum.positive_frequencies()
+        y = np.sqrt(self.spectrum.gxx())
+
+        fig = plt.figure()
+
+        psd_plot = sns.lineplot(x=f, y=y, **kwargs)
+        psd_plot.set(xlabel=x_label, ylabel=y_label, title=title)
+        set_minor_gridlines(psd_plot)
+
+        if y_lim is not None:
+            plt.ylim(y_lim)
+
+        if x_lim is not None:
+            plt.xlim(x_lim)
+
+        if y_log:
+            plt.semilogy()
+
+        plt.tight_layout()
+
+        if filename:
+            fig.savefig(filename)
+
+        return fig, psd_plot
+
+    def plot_db_root_gxx(self,
+                         x_label='frequency (Hz)',
+                         y_label=r'$sqrt{PSD}\ (dB re \mu \frac{V}{\sqrt{Hz}})$',
+                         title='',
+                         y_lim=None,
+                         x_lim=None,
+                         y_log=False,
+                         filename=None,
+                         reference=1e-6,
+                         **kwargs):
+        """
+        This function will plot the single-sided power spectral density of the Spectrum.
+
+        Args:
+            x_label: Desired label for the x axis (frequency)
+            y_label: Desired label for the y axis (Gxx)
+            title: Desired title for the plot
+            y_lim: A manual override to set the y axis limits
+            x_lim: A manual override to set the x axis limits
+            y_log: A manual switch to plot semilogy axis
+            filename: If provided, will save the figure to the filename path.
+            reference: Value to refer the dBs to.
+
+        Returns: a Tuple of (axis, figure)
+
+        """
+
+        f = self.spectrum.positive_frequencies()
+        y = 20.*np.log10(np.sqrt(self.spectrum.gxx()) / reference)
+
+        fig = plt.figure()
+
+        psd_plot = sns.lineplot(x=f, y=y, **kwargs)
         psd_plot.set(xlabel=x_label, ylabel=y_label, title=title)
         set_minor_gridlines(psd_plot)
 
@@ -464,7 +591,6 @@ class Spectrogram:
                  amplitudes: np.array,
                  f_res: float,
                  t_res: float):
-
         """
 
         Args:

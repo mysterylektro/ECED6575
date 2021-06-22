@@ -267,10 +267,10 @@ def assign1b(problems=None):
 
         logger.log(logging.DEBUG, f"Plotting single sided power spectral density of file {filename}")
         spectrum_plotter = SpectrumPlotter(spectrum)
-        fig, plot = spectrum_plotter.plot_single_sided_power_spectral_density(title='Assignment 1b, Problem 6\n'
+        fig, plot = spectrum_plotter.plot_gxx(title='Assignment 1b, Problem 6\n'
                                                                                     f'Single sided power spectral '
                                                                                     f'density of {basename}',
-                                                                              filename=f'{PLOT_DIR}{os.sep}problem_6_'
+                                              filename=f'{PLOT_DIR}{os.sep}problem_6_'
                                                                                        f'gxx_{basename}.png')
 
         plt.close(fig)
@@ -303,10 +303,10 @@ def assign1b(problems=None):
 
         logger.log(logging.DEBUG, f"Plotting single sided power spectral density of file {filename}")
         spectrum_plotter.set_spectrum(spectrum)
-        fig, plot = spectrum_plotter.plot_single_sided_power_spectral_density(title='Assignment 1b, Problem 7\n'
+        fig, plot = spectrum_plotter.plot_gxx(title='Assignment 1b, Problem 7\n'
                                                                                     f'Single sided power spectral '
                                                                                     f'density of {basename}',
-                                                                              filename=f'{PLOT_DIR}{os.sep}problem_7_'
+                                              filename=f'{PLOT_DIR}{os.sep}problem_7_'
                                                                                        f'gxx_{basename}.png')
 
         plt.close(fig)
@@ -351,10 +351,10 @@ def assign1b(problems=None):
 
         logger.log(logging.DEBUG, "Plotting single sided power spectral density...")
         spectrum_plotter.set_spectrum(spectrum)
-        fig, plot = spectrum_plotter.plot_single_sided_power_spectral_density(title='Assignment 1b, Problem 8\n'
+        fig, plot = spectrum_plotter.plot_gxx(title='Assignment 1b, Problem 8\n'
                                                                                     f'Single sided power spectral '
                                                                                     f'density of recorded signal',
-                                                                              filename=f'{PLOT_DIR}{os.sep}problem_8_'
+                                              filename=f'{PLOT_DIR}{os.sep}problem_8_'
                                                                                        f'gxx_recorded_signal.png')
         logger.log(logging.DEBUG, "Setting y axis to semilogy...")
         plt.semilogy()

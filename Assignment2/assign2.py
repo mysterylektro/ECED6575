@@ -359,27 +359,27 @@ def problem_2():
     plot_title = 'Assignment 2, Problem 2e\nPower spectrum of mean synchronized timeseries'
     filename = PLOT_DIR + os.sep + 'problem_2e_sync_time_average_spectrum.png'
     logger.log(logging.DEBUG, "Generating and saving plot...")
-    fig, p = spectrum_plotter.plot_single_sided_power_spectral_density(filename=filename,
-                                                                       title=plot_title)
+    fig, p = spectrum_plotter.plot_gxx(filename=filename,
+                                       title=plot_title)
     plt.close(fig)
     filename = PLOT_DIR + os.sep + 'problem_2e_sync_time_average_spectrum_log.png'
-    fig, p = spectrum_plotter.plot_single_sided_power_spectral_density(filename=filename,
-                                                                       title=plot_title,
-                                                                       y_log=True)
+    fig, p = spectrum_plotter.plot_gxx(filename=filename,
+                                       title=plot_title,
+                                       y_log=True)
     plt.close(fig)
 
     logger.log(logging.DEBUG, "Zooming in on peak...")
     logger.log(logging.DEBUG, "Generating and saving plot...")
     filename = PLOT_DIR + os.sep + 'problem_2e_sync_time_average_spectrum_zoom.png'
-    fig, p = spectrum_plotter.plot_single_sided_power_spectral_density(filename=filename,
-                                                                       title=plot_title,
-                                                                       x_lim=zoom_xlim)
+    fig, p = spectrum_plotter.plot_gxx(filename=filename,
+                                       title=plot_title,
+                                       x_lim=zoom_xlim)
     plt.close(fig)
     filename = PLOT_DIR + os.sep + 'problem_2e_sync_time_average_spectrum_zoom_log.png'
-    fig, p = spectrum_plotter.plot_single_sided_power_spectral_density(filename=filename,
-                                                                       title=plot_title,
-                                                                       x_lim=zoom_xlim,
-                                                                       y_log=True)
+    fig, p = spectrum_plotter.plot_gxx(filename=filename,
+                                       title=plot_title,
+                                       x_lim=zoom_xlim,
+                                       y_log=True)
     plt.close(fig)
 
 

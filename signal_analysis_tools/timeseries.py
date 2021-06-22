@@ -32,6 +32,7 @@ class Timeseries:
                  samples: np.array,
                  sample_rate: float,
                  time_offset: float = 0.0,
+                 units: str = 'V',
                  name: str = ''):
         """
         Initialize a Timeseries class. If a sample rate is provided, the time axis will be recomputed based on that
@@ -45,6 +46,7 @@ class Timeseries:
 
         self.sample_rate = sample_rate
         self.time_offset = time_offset
+        self.units = units
         self.name = name
 
         time_axis = np.arange(len(samples)) / self.sample_rate + self.time_offset
@@ -123,7 +125,7 @@ class Timeseries:
         Returns: The root-mean square value (in units) of the measured amplitudes.
 
         """
-        return np.sqrt(np.mean(self.amplitude() ** 2))
+        return np.abs(np.sqrt(np.mean(self.amplitude() ** 2)))
 
     def std(self) -> float:
         """
@@ -197,8 +199,21 @@ class Timeseries:
         data = self.data['amplitude'][start_idx:end_idx]
         if zero_mean:
             data -= np.mean(data)
-        time_axis = np.arange(len(data)) / self.sample_rate + self.data['time'][start_idx]
-        return Timeseries(time_axis, data, self.sample_rate)
+
+        return Timeseries(data, self.sample_rate)
+
+    def zero_mean(self) -> 'Timeseries':
+        return Timeseries(self.data['amplitude'] - self.mean(), self.sample_rate)
+
+    def zero_pad(self, n, start=False, end=True):
+        data = self.data['amplitude']
+        zeroes = np.zeros(n, dtype=data.dtype)
+        if start:
+            data = np.concatenate((zeroes, data))
+        if end:
+            data = np.concatenate((data, zeroes))
+
+        return Timeseries(data, self.sample_rate)
 
 
 class TimeseriesPlotter:
@@ -273,7 +288,8 @@ class TimeseriesPlotter:
                          y_lim=None,
                          x_lim=None,
                          stats=None,
-                         filename=None):
+                         filename=None,
+                         **kwargs):
         """
         This function will generate a time domain plot and return the axis and figure.
 
@@ -291,7 +307,7 @@ class TimeseriesPlotter:
         """
         x, y = self.timeseries.time(), self.timeseries.amplitude()
         fig = plt.figure()
-        line_plot = sns.lineplot(x=x, y=y)
+        line_plot = sns.lineplot(x=x, y=y, **kwargs)
         line_plot.set(xlabel=x_label, ylabel=y_label, title=title)
         set_minor_gridlines(line_plot)
 
