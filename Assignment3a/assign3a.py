@@ -12,6 +12,7 @@
 
 from signal_analysis_tools.utility_import import *
 from scipy.signal.windows.windows import flattop, hann
+import logging
 
 # Setup output directories.
 PLOT_DIR = os.sep.join([os.path.dirname(__file__), 'plots'])
