@@ -19,7 +19,7 @@ import numpy as np
 class WaveFileReader:
     sizes = {1: 'B', 2: 'h', 4: 'i'}
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, normalize=True):
         super().__init__()
         self.filename = None
         self.num_samples = None
@@ -27,6 +27,7 @@ class WaveFileReader:
         self.sample_width = None
         self.num_channels = None
         self.format_size = None
+        self.normalize = normalize
         self.pos = 0
         self.EOF = False
 
@@ -66,6 +67,9 @@ class WaveFileReader:
             if num_samples_read < num_samples:
                 self.EOF = True
             samples = np.array(struct.unpack(f'<{num_samples_read}{self.format_size}', samples))
+            if self.normalize:
+                maximum = 2**(8*self.sample_width-1)
+                samples = samples / maximum
             data_out = Timeseries(samples, self.sample_rate, time_offset=self.pos // self.sample_width // self.num_channels)
             self.pos += num_samples_read
 

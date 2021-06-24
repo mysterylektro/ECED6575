@@ -248,7 +248,7 @@ def problem_5():
 
     # Negative calibration factor because B&K Hydrophone inverts pressure.
     logger.log(logging.DEBUG, f'Calibrating timeseries...')
-    calibration_factor = -30 / 8477.332654980304  # Pa-rms per V-rms from Q4
+    calibration_factor = -30 / 0.2587076615899751  # Pa-rms per V-rms from Q4
     calibrated_boom_ts = Timeseries(boom_ts.amplitude() * calibration_factor, boom_ts.sample_rate)
 
     logger.log(logging.INFO, f'Maximum pressure observed (Pa): {calibrated_boom_ts.max()}')
