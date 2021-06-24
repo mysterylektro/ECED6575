@@ -242,6 +242,7 @@ class TimeseriesPlotter:
                   'num_samples': r'$N=%d$',
                   'sample_rate': r'$f_{s}=%.2f\ Hz$',
                   'std': r'$\sigma=%.2f\ V$',
+                  'rms': r'$V_{rms}=%.2f\ V$',
                   'var': r'$\sigma^2=%.2f\ V^2$',
                   'max': r'$V_{max}=%.2f\ V$',
                   'std_ratio': r'$\frac{V_{max}}{\sigma}=%.2f$'}
@@ -253,15 +254,11 @@ class TimeseriesPlotter:
         Args:
             timeseries: a Timeseries class to plot values for.
         """
-        self.timeseries = timeseries
+        self.timeseries = None
+        self.STATS_FUNC = None
         if timeseries is not None:
-            self.STATS_FUNC = {'mean': self.timeseries.mean,
-                               'num_samples': self.timeseries.num_samples,
-                               'sample_rate': self.timeseries.get_sample_rate,
-                               'std': self.timeseries.std,
-                               'var': self.timeseries.var,
-                               'max': self.timeseries.max,
-                               'std_ratio': self.timeseries.stddev_ratio}
+            self.set_timeseries(timeseries)
+
 
     def set_timeseries(self, timeseries: Timeseries):
         """
@@ -278,6 +275,7 @@ class TimeseriesPlotter:
                            'sample_rate': self.timeseries.get_sample_rate,
                            'std': self.timeseries.std,
                            'var': self.timeseries.var,
+                           'rms': self.timeseries.rms,
                            'max': self.timeseries.max,
                            'std_ratio': self.timeseries.stddev_ratio}
 
@@ -289,6 +287,7 @@ class TimeseriesPlotter:
                          x_lim=None,
                          stats=None,
                          filename=None,
+                         text=None,
                          **kwargs):
         """
         This function will generate a time domain plot and return the axis and figure.
@@ -301,6 +300,7 @@ class TimeseriesPlotter:
             x_lim: A manual override to set the x axis limits
             stats: A list of statistics keys to display on the plot
             filename: If provided, will save the figure to the filename path.
+            text: Manual text to display in a text box.
 
         Returns: a Tuple of (axis, figure)
 
@@ -317,9 +317,16 @@ class TimeseriesPlotter:
         if x_lim is not None:
             plt.xlim(x_lim)
 
+        text_string = ''
+
+        if text is not None:
+            text_string += text
+
         if stats:
-            text_string = '\n'.join([t % f() for t, f in zip([self.STATS_TEXT.get(s) for s in stats],
+            text_string += '\n'.join([t % f() for t, f in zip([self.STATS_TEXT.get(s) for s in stats],
                                                              [self.STATS_FUNC.get(s) for s in stats])])
+
+        if text_string != '':
             line_plot.text(0.05, 0.95, text_string,
                            transform=line_plot.transAxes,
                            fontsize=14, verticalalignment='top', bbox=self.TEXTBOX_PROPS)

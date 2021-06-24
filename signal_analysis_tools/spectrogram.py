@@ -440,6 +440,7 @@ class SpectrumPlotter:
                  x_lim=None,
                  y_log=False,
                  filename=None,
+                 text=None,
                  **kwargs):
         """
         This function will plot the single-sided power spectral density of the Spectrum.
@@ -452,6 +453,7 @@ class SpectrumPlotter:
             x_lim: A manual override to set the x axis limits
             y_log: A manual switch to plot semilogy axis
             filename: If provided, will save the figure to the filename path.
+            text: A string of text to display on the plot.
 
         Returns: a Tuple of (axis, figure)
 
@@ -474,6 +476,14 @@ class SpectrumPlotter:
 
         if y_log:
             plt.semilogy()
+
+        if text is not None:
+            psd_plot.text(0.95, 0.95, text,
+                          transform=psd_plot.transAxes,
+                          fontsize=14,
+                          verticalalignment='top',
+                          horizontalalignment='right',
+                          bbox=self.TEXTBOX_PROPS)
 
         plt.tight_layout()
 
