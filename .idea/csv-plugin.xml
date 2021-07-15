@@ -45,6 +45,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\BellhopExample.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\signal_analysis_tools\kalman.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\signal_analysis_tools\spectrogram.py">
           <value>
             <Attribute>

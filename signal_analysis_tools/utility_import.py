@@ -19,3 +19,4 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 import random
 from signal_analysis_tools.utilities import setup_logging
+from signal_analysis_tools.kalman import *

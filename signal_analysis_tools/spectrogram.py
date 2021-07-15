@@ -12,6 +12,7 @@
 
 from signal_analysis_tools.timeseries import *
 from scipy import fft
+from scipy.signal import windows
 from typing import Union
 import pandas as pd
 
@@ -639,7 +640,9 @@ def timeseries_to_spectrogram(timeseries: Timeseries,
                               fft_size: int = 1024,
                               n_samples: int = 1024,
                               n_records: int = None,
-                              synchronization_offset: int = 0):
+                              synchronization_offset: int = 0,
+                              overlap: float = 0.0,
+                              window: str = None):
     """
     # TODO: Introduce overlap + windowing
 
@@ -649,22 +652,41 @@ def timeseries_to_spectrogram(timeseries: Timeseries,
         timeseries:
         fft_size:
         n_samples:
+        overlap:
+        window: str
 
     Returns:
 
     """
+
+    if overlap >= 1:
+        raise ValueError("Overlap percentage must be less than 100%")
+    if overlap < 0:
+        raise ValueError("Overlap percentage must be equal or greater than 0%")
+
     total_samples = n_samples + synchronization_offset
+    overlap_samples = n_samples * (1-overlap)
 
     if n_records is None:
-        n_records = len(timeseries.data) // total_samples
+        n_records = int(((len(timeseries.data) - total_samples) // overlap_samples)) + 1
 
+    start_samples = [int(i * total_samples * (1 - overlap)) for i in range(n_records)]
     time_data = np.zeros((fft_size, n_records), dtype=float)
 
     # Reshape the timeseries data into bins of n_time_samples:
-
-    input_data = np.reshape(timeseries.data['amplitude'][:(n_records * total_samples)], (total_samples, n_records),
-                            order='F')
+    input_data = np.reshape(np.array(list(zip(*(timeseries.data['amplitude'][i:i+total_samples] for i in start_samples)))),
+                            (total_samples, n_records), order='F')
+    # input_data = np.reshape(timeseries.data['amplitude'][:(n_records * total_samples)], (total_samples, n_records),
+    #                         order='F')
     time_data[:n_samples, :] = input_data[:n_samples, :]
+
+    if window is None:
+        window = np.ones(n_samples)
+    else:
+        window = windows.get_window(window, n_samples)
+
+    # Apply window
+    time_data *= np.transpose(np.tile(window, (time_data.shape[1], 1)))
 
     spectrogram_data = fft.fft(time_data / timeseries.sample_rate, fft_size, axis=0)
     t_res = n_samples / timeseries.sample_rate
