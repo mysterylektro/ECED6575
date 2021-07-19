@@ -689,7 +689,7 @@ def create_spectrogram_image(spectrogram: Spectrogram, max_f=None, window=None):
 
         cbar = plt.colorbar(im)
         cbar.ax.tick_params(axis='y', direction='in')
-        cbar.set_label(r'PSD ($\frac{V^2}{Hz}$)', rotation=270, labelpad=20)
+        cbar.set_label(r'PSD ($dB\ re\ 1\ \frac{V^2}{Hz}$)', rotation=270, labelpad=20)
 
         plt.tight_layout()
 
