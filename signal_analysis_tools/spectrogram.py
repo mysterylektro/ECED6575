@@ -620,7 +620,7 @@ class Spectrogram:
         self.end_time = self.data.shape[1] * self.t_res + self.start_time
 
     def positive_frequency_axis(self):
-        return np.linspace(0, self.data.shape[0] * self.f_res / 2, int(self.data.shape[0] / 2), endpoint=False)
+        return np.linspace(0, self.data.shape[0] * self.f_res / 2 + 1, int(self.data.shape[0] / 2 + 1), endpoint=False)
 
     def frequency_axis(self):
         return np.concatenate(self.positive_frequency_axis(), -1 * self.positive_frequency_axis()[::-1][1:-1])
@@ -628,12 +628,72 @@ class Spectrogram:
     def time_axis(self):
         return np.linspace(self.start_time, self.end_time, self.data.shape[1], endpoint=True)
 
-    def gxx(self):
-        positive_data = self.data[:int(self.data.shape[0] // 2), :]
+    def gxx(self, window=None):
+        if window is not None:
+            correction = energy_correction(window, len(self.positive_frequency_axis()) * 2)
+        else:
+            correction = 1
+
+        positive_data = self.data[:int(self.data.shape[0] // 2 + 1), :]
         record_duration = 1 / self.f_res
         weights = np.full_like(positive_data, fill_value=2, dtype=float)
         weights[0, :], weights[-1, :] = 1, 1
-        return ((weights / record_duration) * np.conj(positive_data) * positive_data).real
+        return ((weights / record_duration) * np.conj(positive_data) * positive_data).real * correction
+
+    def rms(self, window=None):
+        gxx = self.gxx(window=window)
+        return np.sum(gxx, axis=1) / gxx.shape[1]
+
+    def rms_v_time(self, window=None):
+        gxx = self.gxx(window=window)
+        return np.sqrt(np.sum(gxx*self.f_res, axis=0))
+
+
+def energy_correction(window, n_samples):
+    window = windows.get_window(window, n_samples)
+    return len(window) / np.sum(window ** 2)
+
+
+def create_spectrogram_image(spectrogram: Spectrogram, max_f=None, window=None):
+
+    with sns.axes_style("ticks"):
+        gxx = 10*np.log10(spectrogram.gxx(window=window))
+        x_axis, y_axis = spectrogram.positive_frequency_axis(), spectrogram.time_axis()
+
+        # Toss the 0 Hz bin:
+        gxx = gxx[1:, :]
+        x_axis = x_axis[1:]
+
+        xmin, xmax, ymin, ymax = x_axis[0], x_axis[-1], y_axis[0], y_axis[-1]
+
+        # Find closest frequency to max_f
+        if max_f is None:
+            max_f = xmax * 0.8
+
+        max_f = x_axis[x_axis <= max_f][-1]
+        end_index = int(np.argwhere(x_axis == max_f))
+
+        # Toss last 80%
+        gxx = gxx[:end_index, :]
+        x_axis = x_axis[:end_index]
+
+        xmin, xmax, ymin, ymax = x_axis[0], x_axis[-1], y_axis[0], y_axis[-1]
+        fig, ax = plt.subplots(1)
+        im = ax.imshow(np.transpose(gxx), extent=[xmin, xmax, ymax, ymin], cmap='plasma')
+        ax.grid(False, 'both')
+        ax.set_aspect(xmax / ymax)
+        ax.set_ylabel('time (s)')
+        ax.set_xlabel('frequency (Hz)')
+
+        ax.set_aspect(xmax / ymax)
+
+        cbar = plt.colorbar(im)
+        cbar.ax.tick_params(axis='y', direction='in')
+        cbar.set_label(r'PSD ($\frac{V^2}{Hz}$)', rotation=270, labelpad=20)
+
+        plt.tight_layout()
+
+    return fig, ax
 
 
 def timeseries_to_spectrogram(timeseries: Timeseries,
@@ -689,7 +749,7 @@ def timeseries_to_spectrogram(timeseries: Timeseries,
     time_data *= np.transpose(np.tile(window, (time_data.shape[1], 1)))
 
     spectrogram_data = fft.fft(time_data / timeseries.sample_rate, fft_size, axis=0)
-    t_res = n_samples / timeseries.sample_rate
-    f_res = 1 / t_res
+    t_res = timeseries.duration() / (int(((len(timeseries.data) - total_samples) // overlap_samples)) + 1)
+    f_res = timeseries.sample_rate / fft_size
 
     return Spectrogram(spectrogram_data, f_res, t_res)

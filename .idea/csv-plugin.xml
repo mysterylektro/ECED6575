@@ -52,6 +52,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\FinalProject\main.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\signal_analysis_tools\kalman.py">
           <value>
             <Attribute>
